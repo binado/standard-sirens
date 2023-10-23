@@ -12,6 +12,7 @@ tex/*.log
 tex/*Notes.bib
 tex/*.bbl
 tex/*.blg
+tex/*.gz
 
 # Distribution / packaging
 .Python
