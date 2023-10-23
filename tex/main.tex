@@ -64,74 +64,88 @@
 %\thanks{A footnote to the article title}%
 
 \author{Bernardo Porto Veronese}
- %\altaffiliation[Also at ]{PPGCOSMO, UFES}%Lines break automatically or can be forced with \\
- \email{Second.Author@institution.edu}
+%\altaffiliation[Also at ]{PPGCOSMO, UFES}%Lines break automatically or can be forced with \\
+\email{Second.Author@institution.edu}
 \affiliation{%
- PPGCOSMO, UFES
+	PPGCOSMO, UFES
 }%
 
 %\collaboration{MUSO Collaboration}%\noaffiliation
 
 \date{\today}% It is always \today, today,
-             %  but any date may be explicitly specified
+%  but any date may be explicitly specified
 
 \begin{abstract}
-An article usually includes an abstract, a concise summary of the work
-covered at length in the main body of the article. 
-\begin{description}
-\item[Usage]
-Secondary publications and information retrieval purposes.
-\item[Structure]
-You may use the \texttt{description} environment to structure your abstract;
-use the optional argument of the \verb+\item+ command to give the category of each item. 
-\end{description}
+	An article usually includes an abstract, a concise summary of the work
+	covered at length in the main body of the article.
+	\begin{description}
+		\item[Usage] Secondary publications and information retrieval purposes.
+		\item[Structure] You may use the \texttt{description} environment to structure your abstract; use the
+		      optional argument of the \verb+\item+ command to give the category of each item.
+	\end{description}
 \end{abstract}
 
 %\keywords{Suggested keywords}%Use showkeys class option if keyword
-                              %display desired
+%display desired
 \maketitle
 
 %\tableofcontents
 
-\section{\label{sec:introduction}Introduction}
-The idea of using gravitational waves (GWs) from compact
-binary mergers to measure cosmological parameters was firs introduced by Bernard Schutz in 1986~\cite{Schutz:1986gp}. for cosmology is an idea
-which has finally come to fruition in recent years. These
-signals directly provide a measurement of the luminosity
-distance measurement to the source, which is therefore
-independent of the cosmic distance ladder. With the addition of redshift information, measurements can therefore be made of those cosmological parameters which
-impact the expansion history of the Universe, such as
-the Hubble constant ($H_0$). This approach is independent of all other local measurements to date.
+\section{\label{sec:introduction}Introduction} The idea of using gravitational waves (GWs) from compact binary mergers to measure
+cosmological parameters was first introduced by Bernard Schutz in 1986~\cite{Schutz:1986gp}. for
+cosmology is an idea which has finally come to fruition in recent years. These signals directly
+provide a measurement of the luminosity distance measurement to the source, which is therefore
+independent of the cosmic distance ladder. With the addition of redshift information, measurements
+can therefore be made of those cosmological parameters which impact the expansion history of the
+Universe, such as the Hubble constant ($H_0$). This approach is independent of all other local
+measurements to date.
 
-The standard siren method probes the expansion history of the universe with the distance-redshift relation, with which one can infer the cosmological parameters such as $H_0$ and the dark energy equation of state parameter $w$:~\cite{Hogg:1999ad}
+The standard siren method probes the expansion history of the universe with the distance-redshift
+relation, with which one can infer the cosmological parameters such as $H_0$ and the dark energy
+equation of state parameter $w$:~\cite{Hogg:1999ad}
 
 \begin{align}
-    \label{eq:intro:distance-redshift-relation}
-    D_l(z) &= (1+z)\frac{c}{H_0 \sqrt{\Omega_{K}}} \sinh \left[ \sqrt{\Omega_{K}} \int_0^z \frac{H_0}{H(z') dz'}\right]\\
-    \nonumber
-    \frac{H(z)}{H_0} &= \sqrt{\Omega_m (1+z)^3 + \Omega_K (1+z)^2 + \Omega_{de} (1+z)^{3(1+w)}}.
+	\label{eq:intro:distance-redshift-relation}
+	D_l(z)           & = (1+z)\frac{c}{H_0 \sqrt{\Omega_{K}}} \sinh \left[ \sqrt{\Omega_{K}} \int_0^z \frac{H_0}{H(z') dz'}\right] \\
+	\nonumber
+	\frac{H(z)}{H_0} & = \sqrt{\Omega_m (1+z)^3 + \Omega_K (1+z)^2 + \Omega_{de} (1+z)^{3(1+w)}}.
 \end{align}
 
-To lighten notation, we have omitted the 0-subscript next to the $\Omega_i$'s, although they correspond to the present day values in the above equation. Note that using~\eqref{eq:intro:distance-redshift-relation} requires specifying a cosmological model.
+To lighten notation, we have omitted the 0-subscript next to the $\Omega_i$'s, although they
+correspond to the present day values in the above equation. Note that
+using~\eqref{eq:intro:distance-redshift-relation} requires specifying a cosmological model.
 
 \subsection{Gravitational-wave distances}
 
-The accuracy of the GW luminosity distance measurement is typically of the order of 10\%. The main source of uncertainty comes from the degeneracy between the distance and inclination angle of the source. The latter is defined as the angle between the line-of-sight vector from the source to the detector and the orbital-angular momentum of the binary system.
-
+The accuracy of the GW luminosity distance measurement is typically of the order of 10\%. The main
+source of uncertainty comes from the degeneracy between the distance and inclination angle of the
+source. The latter is defined as the angle between the line-of-sight vector from the source to the
+detector and the orbital-angular momentum of the binary system.
 
 \subsection{Assigning redshifts to GW sources}
 
-From the GW data, it is possible to infer the luminosity distance to the binary source, but not the redshift, as the latter comes degenerate with the chirp mass in the GW waveform modelling. It is therefore necessary to complement it with another source of information that provides the redshift measurement. If an electromagnetic (EM) counterpart to the gravitational wave event is detected, then one can identify the host galaxy and, therefore, the redshift of the source. An event with an EM counterpart is called a \textit{bright siren}. So far, the only confirmed such event has been the binary neutron star detection GW170817, which occurred so exceptionally close to our galaxy  - at $d \sim 40$Mpc - that a direct, model-independent estimation of $H_0$ with Hubble's law,
+From the GW data, it is possible to infer the luminosity distance to the binary source, but not the
+redshift, as the latter comes degenerate with the chirp mass in the GW waveform modelling. It is
+therefore necessary to complement it with another source of information that provides the redshift
+measurement. If an electromagnetic (EM) counterpart to the gravitational wave event is detected,
+then one can identify the host galaxy and, therefore, the redshift of the source. An event with an
+EM counterpart is called a \textit{bright siren}. So far, the only confirmed such event has been
+the binary neutron star detection GW170817, which occurred so exceptionally close to our galaxy -
+at $d \sim 40$Mpc - that a direct, model-independent estimation of $H_0$ with Hubble's law,
 
 \begin{equation}
-    v_H = H_0 d,
+	v_H = H_0 d,
 \end{equation}
 
-could be made by measuring the Hubble flow velocity $v_H$, resulting in $H_0 = 70.0^{+12.0}_{-8.0}$ km s$^{-1}$ Mpc$^{-1}$~\cite{LIGOScientific:2017adf}.
+could be made by measuring the Hubble flow velocity $v_H$, resulting in $H_0 = 70.0^{+12.0}_{-8.0}$
+km s$^{-1}$ Mpc$^{-1}$~\cite{LIGOScientific:2017adf}.
 
-As stated above, almost all GW events have been detected without an EM counterpart. These \textit{dark sirens} can be used to probe the expansion of the universe provided that they are complemented with an external redshift measurement. In his original paper, Schutz suggested that galaxy catalogs could be such a source: an averaging redshifts of the galaxies within the GW event's localisation volume could serve as an estimate of true value of $z$. Such analyses have been carried out in the literature, see~\onlinecite{}
-
-
+As stated above, almost all GW events have been detected without an EM counterpart. These
+\textit{dark sirens} can be used to probe the expansion of the universe provided that they are
+complemented with an external redshift measurement. In his original paper, Schutz suggested that
+galaxy catalogs could be such a source: an averaging redshifts of the galaxies within the GW
+event's localisation volume could serve as an estimate of true value of $z$. Such analyses have
+been carried out in the literature, see~\onlinecite{}
 
 \section{\label{sec:framework}Statistical framework}
 
