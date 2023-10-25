@@ -19,13 +19,13 @@
 %  4)  latex apssamp.tex
 %
 \documentclass[%
- reprint,
+ %reprint,
 %superscriptaddress,
 %groupedaddress,
 %unsortedaddress,
 %runinaddress,
 %frontmatterverbose, 
-%preprint,
+preprint,
 %preprintnumbers,
 %nofootinbib,
 %nobibnotes,
@@ -43,7 +43,7 @@
 \usepackage{graphicx}% Include figure files
 \usepackage{dcolumn}% Align table columns on decimal point
 \usepackage{bm}% bold math
-%\usepackage{hyperref}% add hypertext capabilities
+\usepackage{hyperref}% add hypertext capabilities
 %\usepackage[mathlines]{lineno}% Enable numbering of text and display math
 %\linenumbers\relax % Commence numbering lines
 
@@ -54,6 +54,8 @@
 %%total={6.5in,8.75in}, top=1.2in, left=0.9in, includefoot,
 %%height=10in,a5paper,hmargin={3cm,0.8in},
 %]{geometry}
+
+\newcommand{\given}[2]{p( #1 | #2 )}
 
 \begin{document}
 
@@ -154,6 +156,10 @@ value of $H_0$ will be measured as other values will statistically average out. 
 been carried out in the literature,
 see~\cite{DelPozzo:2011vcw,Chen:2017rfc,LIGOScientific:2018gmd,Gray:2019ksv,DES:2019ccw,DES:2020nay}.
 
+This manuscript is organized as follows. In Sec.~\ref{sec:framework}, we will go over the
+statistical formalism to perform data analysis with standard sirens, and we will specialize in the
+galaxy catalog method.
+
 \section{\label{sec:framework}Statistical framework}
 
 In gravitational-wave astronomy, one subject of interest is extracting the distributional
@@ -163,7 +169,26 @@ simultaneously account for measurement uncertainties and selection effects. One 
 latter affects the observed population is a Mamquist bias: the loudest or brightest sources are
 more likely to be detected. The standard formalism for extracting the true source population
 parameters by incorporating these biases in the analysis is frequently labeled as Hierarchical
-Bayesian inference, see~\cite{Loredo:2004nn,Mandel:2018mve, Vitale:2020aaz}.
+Bayesian inference, see~\cite{Loredo:2004nn,Mandel:2018mve,Vitale_2021}.
+
+In the discussion below, we will follow the framework outlined in Ref.~\onlinecite{Gair_2023},
+which is a pedagogical resource on the galaxy catalog approach.
+
+The GW population distribution is sampled with a set of $N_{obs}$ \textit{observed} events with
+true parameters $\{ \vec{\theta}_i \}$, $i \in \{1, \cdots, N_{obs}\}$. We do not have direct
+access to the true parameters because of noise; instead, we have a set of measured data $\{
+	\vec{d}_i \}$. The $\vec{\theta}_i$ are the individual object parameters, although we are
+interested in the population parameters, which we call $\vec{\lambda}$. We cannot determine
+$\vec{\lambda}$ directly, but we can compute the posterior probability given the observations. In
+the usual Bayesian formalism,
+
+\begin{equation}
+	\given{\vec{\lambda}}{\{\vec{d}_i \}} = \frac{\given{\{\vec{d}_i \}}{\vec{\lambda}} \pi(\vec{\lambda})}{p(\{\vec{d}_i \})}
+\end{equation}
+
+where $\given{\{\vec{d}_i \}}{\vec{\lambda}}$ is the likelihood of observing the dataset given the
+population properties, $\pi(\vec{\lambda})$ is the prior on $\vec{\lambda}$ and $p(\{\vec{d}_i \})$
+is the evidence, which is the integral of the numerator over $\vec{\lambda}$.
 
 \bibliography{refs}% Produces the bibliography via BibTeX.
 
