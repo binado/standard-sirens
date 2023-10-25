@@ -6,7 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
+# VSCode settings
 .vscode/
+
+# Datasets
+**/*.txt
 
 # Latex
 tex/*.aux
