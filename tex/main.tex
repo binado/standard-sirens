@@ -44,6 +44,7 @@ preprint,
 \usepackage{dcolumn}% Align table columns on decimal point
 \usepackage{bm}% bold math
 \usepackage{hyperref}% add hypertext capabilities
+\usepackage{dsfont}
 %\usepackage[mathlines]{lineno}% Enable numbering of text and display math
 %\linenumbers\relax % Commence numbering lines
 
@@ -56,6 +57,9 @@ preprint,
 %]{geometry}
 
 \newcommand{\given}[2]{p( #1 | #2 )}
+\newcommand{\ppop}[0]{p_{\text{pop}}}
+\newcommand{\pdet}[0]{p_{\text{det}}}
+\newcommand{\ind}[1]{\mathds{1}_{\{ #1 \}}}
 
 \begin{document}
 
@@ -113,8 +117,8 @@ equation of state parameter $w$:~\cite{Hogg:1999ad}
 \end{align}
 
 To lighten notation, we have omitted the 0-subscript next to the $\Omega_i$'s, although they
-correspond to the present day values in the above equation. Note that
-using~\eqref{eq:intro:distance-redshift-relation} requires specifying a cosmological model.
+correspond to the present day values in the above equation. Note that using
+Eq.~\eqref{eq:intro:distance-redshift-relation} requires specifying a cosmological model.
 
 \subsection{Gravitational-wave distances}
 
@@ -183,12 +187,72 @@ $\vec{\lambda}$ directly, but we can compute the posterior probability given the
 the usual Bayesian formalism,
 
 \begin{equation}
-	\given{\vec{\lambda}}{\{\vec{d}_i \}} = \frac{\given{\{\vec{d}_i \}}{\vec{\lambda}} \pi(\vec{\lambda})}{p(\{\vec{d}_i \})}
+	\given{\vec{\lambda}}{\{\vec{d}_i \}} =
+	\frac{\given{\{\vec{d}_i \}}{\vec{\lambda}} \pi(\vec{\lambda})}{p(\{\vec{d}_i \})}
 \end{equation}
 
 where $\given{\{\vec{d}_i \}}{\vec{\lambda}}$ is the likelihood of observing the dataset given the
 population properties, $\pi(\vec{\lambda})$ is the prior on $\vec{\lambda}$ and $p(\{\vec{d}_i \})$
 is the evidence, which is the integral of the numerator over $\vec{\lambda}$.
+
+In the spirit of Ref.~\onlinecite{Mandel:2018mve}, we first start with the idealized scenario where
+the event parameters are perfectly measured. The total likelihood for the set of $N_{obs}$
+independent measurements is then
+
+\begin{equation}
+	\label{eq:stat:posterior-no-noise-no-bias}
+	\given{\{ \vec{\theta}_i \}}{\vec{\lambda}} =
+	\prod_{i=1}^{N_{obs}} \frac{\ppop(\vec{\theta}_i | \vec{\lambda})}{\int \ppop(\vec{\theta}_i | \vec{\lambda}) d\vec{\lambda}}
+\end{equation}
+
+where $\ppop(\vec{\theta} | \vec{\lambda})$ is related to the number density $dN$ of objects
+expected to be found in the region $[\vec{\theta}, \vec{\theta} + d\vec{\theta}]$:
+
+\begin{equation}
+	dN = N \ppop(\vec{\theta} | \vec{\lambda}) d\vec{\theta}
+\end{equation}
+
+We shall build an incrementally more robust model than
+Eq.~\eqref{eq:stat:posterior-no-noise-no-bias}. Let us first consider the presence of selection
+effects: not all events are equally likely to be detected. We can encode this with a detection
+probability $\pdet$. In the perfect measurement idealization, this detection probability becomes a
+function of the parameters $\vec{\theta}$ only. In the general case, where noise is present, the
+detection probability is a function of the data. Let $\mathcal{D}$ be the set of all data. To
+determine whether an event is detectable, one can use a detection statistic $\rho_{\mathcal{D}}$,
+which can be calculated for each piece of data. In practice, this statistic can be the
+signal-to-noise ratio (SNR), the false-alarm rate, etc. We split $\mathcal{D}$ into two disjoints
+sets, $\mathcal{D}_<$ and $\mathcal{D}_\geq$, according to whether $\rho_\mathcal{D}$ is smaller
+than a threshold $\rho_{\text{tr}}$ or not. Then
+
+\begin{equation}
+	\pdet(\vec{\theta}) = \int_{\mathcal{D}_\geq} \given{\vec{d}}{\vec{\theta}}d\vec{d}
+\end{equation}
+
+The probability of observing a particular dataset $\vec{d}$ given the assumed population
+distribution parameterised by $\vec{\lambda}$ is
+
+\begin{equation}
+	\given{\vec{d}}{\vec{\lambda}} =
+	\frac{\int \given{\vec{d}}{\vec{\theta}} \ppop(\vec{\theta} | \vec{\lambda} ) d\vec{\theta}}{\alpha(\vec{\lambda})}
+\end{equation}
+
+where $\alpha(\vec{\lambda})$ is a normalization factor integrated over the set of detectable data,
+
+\begin{align}
+	\alpha(\vec{\lambda}) & =
+	\int_{\mathcal{D}_\geq} d\vec{d} \int \given{\vec{d}}{\vec{\theta}} \ppop(\vec{d} | \vec{\lambda} ) d\vec{\theta}                                           \\
+	                      & = \int \left[ \int_{\mathcal{D}_\geq} \given{\vec{d}}{\vec{\theta}} d\vec{d} \right]  \ppop(\vec{d} | \vec{\lambda} ) d\vec{\theta} \\
+	                      & = \int \pdet(\vec{\theta}) \ppop(\vec{\theta} | \vec{\lambda} ) d\vec{\theta}
+\end{align}
+
+Hence, in the presence of both measurement uncertainties and selection effects,
+Eq.~\eqref{eq:stat:posterior-no-noise-no-bias} becomes
+
+\begin{equation}
+	\given{\{ \vec{d}_i \}}{\vec{\lambda}} =
+	\prod_{i=1}^{N_{obs}}
+	\frac{\int \given{\vec{d_i}}{\vec{\theta}} \ppop(\vec{\theta} | \vec{\lambda} ) d\vec{\theta}}{\int \pdet(\vec{\theta}) \ppop(\vec{\theta} | \vec{\lambda} ) d\vec{\theta}}
+\end{equation}
 
 \bibliography{refs}% Produces the bibliography via BibTeX.
 
