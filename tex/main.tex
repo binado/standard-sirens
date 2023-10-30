@@ -59,6 +59,8 @@ preprint,
 \newcommand{\given}[2]{p( #1 | #2 )}
 \newcommand{\ppop}[0]{p_{\text{pop}}}
 \newcommand{\pdet}[0]{p_{\text{det}}}
+\newcommand{\ndet}[0]{N_{\text{det}}}
+\newcommand{\nobs}[0]{N_{\text{obs}}}
 \newcommand{\ind}[1]{\mathds{1}_{\{ #1 \}}}
 
 \begin{document}
@@ -178,13 +180,13 @@ Bayesian inference, see~\cite{Loredo:2004nn,Mandel:2018mve,Vitale_2021}.
 In the discussion below, we will follow the framework outlined in Ref.~\onlinecite{Gair_2023},
 which is a pedagogical resource on the galaxy catalog approach.
 
-The GW population distribution is sampled with a set of $N_{obs}$ \textit{observed} events with
-true parameters $\{ \vec{\theta}_i \}$, $i \in \{1, \cdots, N_{obs}\}$. We do not have direct
-access to the true parameters because of noise; instead, we have a set of measured data $\{
-	\vec{d}_i \}$. The $\vec{\theta}_i$ are the individual object parameters, although we are
-interested in the population hyperparameters, which we call $\vec{\lambda}$. We cannot determine
-$\vec{\lambda}$ directly, but we can compute the posterior probability given the observations. In
-the usual Bayesian formalism,
+The GW population distribution is sampled with a set of $\nobs$ \textit{observed} events with true
+parameters $\{ \vec{\theta}_i \}$, $i \in \{1, \cdots, \nobs\}$. We do not have direct access to
+the true parameters because of noise; instead, we have a set of measured data $\{ \vec{d}_i \}$.
+The $\vec{\theta}_i$ are the individual object parameters, although we are interested in the
+population hyperparameters, which we call $\vec{\lambda}$. We cannot determine $\vec{\lambda}$
+directly, but we can compute the posterior probability given the observations. In the usual
+Bayesian formalism,
 
 \begin{equation}
 	\given{\vec{\lambda}}{\{\vec{d}_i \}} =
@@ -196,19 +198,20 @@ population properties, $\pi(\vec{\lambda})$ is the prior on $\vec{\lambda}$ and 
 is the evidence, which is the integral of the numerator over $\vec{\lambda}$.
 
 In the spirit of Ref.~\onlinecite{Mandel:2018mve}, we first start with the idealized scenario where
-the event parameters are perfectly measured. The total likelihood for the set of $N_{obs}$
+the event parameters are perfectly measured. The total likelihood for the set of $\nobs$
 independent measurements is then
 
 \begin{equation}
 	\label{eq:stat:posterior-no-noise-no-bias}
 	\given{\{ \vec{\theta}_i \}}{\vec{\lambda}} =
-	\prod_{i=1}^{N_{obs}} \frac{\ppop(\vec{\theta}_i | \vec{\lambda})}{\int \ppop(\vec{\theta}_i | \vec{\lambda}) d\vec{\lambda}}
+	\prod_{i=1}^{\nobs} \frac{\ppop(\vec{\theta}_i | \vec{\lambda})}{\int \ppop(\vec{\theta}_i | \vec{\lambda}) d\vec{\lambda}}
 \end{equation}
 
 where $\ppop(\vec{\theta} | \vec{\lambda})$ is related to the number density $dN$ of objects
 expected to be found in the region $[\vec{\theta}, \vec{\theta} + d\vec{\theta}]$:
 
 \begin{equation}
+	\label{eq:stat:ppop}
 	dN = N \ppop(\vec{\theta} | \vec{\lambda}) d\vec{\theta}
 \end{equation}
 
@@ -242,6 +245,7 @@ where $\alpha(\vec{\lambda})$ is a normalization factor integrated over the set 
 	\alpha(\vec{\lambda}) & =
 	\int_{\mathcal{D}_\geq} d\vec{d} \int \given{\vec{d}}{\vec{\theta}} \ppop(\vec{d} | \vec{\lambda} ) d\vec{\theta}                                           \\
 	                      & = \int \left[ \int_{\mathcal{D}_\geq} \given{\vec{d}}{\vec{\theta}} d\vec{d} \right]  \ppop(\vec{d} | \vec{\lambda} ) d\vec{\theta} \\
+	\label{eq:stat:nalpha}
 	                      & = \int \pdet(\vec{\theta}) \ppop(\vec{\theta} | \vec{\lambda} ) d\vec{\theta}
 \end{align}
 
@@ -250,9 +254,56 @@ Eq.~\eqref{eq:stat:posterior-no-noise-no-bias} becomes
 
 \begin{equation}
 	\given{\{ \vec{d}_i \}}{\vec{\lambda}} =
-	\prod_{i=1}^{N_{obs}}
+	\prod_{i=1}^{\nobs}
 	\frac{\int \given{\vec{d_i}}{\vec{\theta}} \ppop(\vec{\theta} | \vec{\lambda} ) d\vec{\theta}}{\int \pdet(\vec{\theta}) \ppop(\vec{\theta} | \vec{\lambda} ) d\vec{\theta}}
 \end{equation}
+
+We can also include the population rate into the framework. The probability of observing $k$ events
+with an expected number of detections $\ndet$ is given by a Poisson distribution as
+
+\begin{equation}
+	\label{eq:stat:poisson}
+	\given{k}{\ndet} = e^{-\ndet}(\ndet)^{\nobs}
+\end{equation}
+
+The usual $\nobs !$ term is absent in Eq.~\eqref{eq:stat:poisson} because the events are
+distinguishable from the observed data. When accouting for selection effects, the expected number
+of detections $\ndet$ becomes
+
+\begin{align}
+	\ndet(\vec{\lambda}) & = \int_{\mathcal{D}_\geq}  d\vec{d} \int \given{\vec{d}}{\vec{\theta}} \frac{dN}{d\vec{\theta}} d\vec{\theta} \\
+	                     & = \int \left[ \int_{\mathcal{D}_\geq} \given{\vec{d}} d\vec{d} \right]\frac{dN}{d\vec{\theta}} d\vec{\theta}  \\
+	                     & = \int \pdet(\vec{\theta})\frac{dN}{d\vec{\theta}} d\vec{\theta}                                              \\
+	                     & = \int \pdet(\vec{\theta}) N \ppop(\vec{\theta} | \vec{\lambda}) d\vec{\theta}                                \\
+	                     & = N \alpha(\lambda)
+\end{align}
+
+where the last two equalities are derived from Eq.~\eqref{eq:stat:ppop} and
+Eq.~\eqref{eq:stat:nalpha} respectively. The full posterior with the population rate is then
+
+\begin{align}
+	\given{\vec{\lambda}, N }{\vec{d}} & = \given{N}{\vec{\lambda}, \vec{d}}\given{\vec{\lambda}}{\vec{d}} \\
+	                                   & = e^{-\ndet}(\ndet)^{\nobs} \pi(N) \pi(\vec{\lambda})
+	\prod_{i=1}^{\nobs} \frac{\int \given{\vec{d_i}}{\vec{\theta}} \ppop(\vec{\theta} | \vec{\lambda} ) d\vec{\theta}}{\int \pdet(\vec{\theta}) \ppop(\vec{\theta} | \vec{\lambda} ) d\vec{\theta}}
+\end{align}
+
+If a prior $\pi(N) \propto 1/N$ is assumed on the population rate, then the posterior can be
+marginalized over $N$:
+
+\begin{align}
+	\int e^{-\ndet}(\ndet)^{\nobs} \frac{dN}{N} & = \int e^{-\ndet}(\ndet)^{\nobs - 1} d\ndet \\
+	                                            & = (\nobs - 1)!
+\end{align}
+
+So far, the framework we developed has been general; we now specify to the gravitational wave case.
+The individual event parameters $\vec{\theta}$ describe the compact binary coalescence (CBC): the
+individual masses and spins, sky position, polarization, inclination angle, luminosity distance,
+and redshift. The population parameters $\vec{\lambda}$ can be split into three groups: mass, rate
+and cosmological parameters. The mass parameters specify the GW mass model, such as minimum and
+maximum mass, slopes, the positions of any features, etc. These are used in the spectral siren
+method. The rate parametersa are used in the model to describe how the CBC merger rate evolves with
+redshift. Finally, the cosmological parameters are the constants which appear in
+Eq.~\eqref{eq:intro:distance-redshift-relation}, namely $\{H_0, \Omega_m, \Omega_{de}, w\}$.
 
 \bibliography{refs}% Produces the bibliography via BibTeX.
 
