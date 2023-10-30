@@ -282,9 +282,9 @@ where the last two equalities are derived from Eq.~\eqref{eq:stat:ppop} and
 Eq.~\eqref{eq:stat:nalpha} respectively. The full posterior with the population rate is then
 
 \begin{align}
-	\given{\vec{\lambda}, N }{\vec{d}} & = \given{N}{\vec{\lambda}, \vec{d}}\given{\vec{\lambda}}{\vec{d}} \\
-	                                   & = e^{-\ndet}(\ndet)^{\nobs} \pi(N) \pi(\vec{\lambda})
-	\prod_{i=1}^{\nobs} \frac{\int \given{\vec{d_i}}{\vec{\theta}} \ppop(\vec{\theta} | \vec{\lambda} ) d\vec{\theta}}{\int \pdet(\vec{\theta}) \ppop(\vec{\theta} | \vec{\lambda} ) d\vec{\theta}}
+	\given{\vec{\lambda}, N }{\vec{d}} & = \given{N}{\vec{\lambda}, \vec{d}}\given{\vec{\lambda}}{\vec{d}}                    \\
+	                                   & = e^{-\ndet}(\ndet)^{\nobs} \pi(N) \pi(\vec{\lambda}) \alpha(\vec{\lambda})^{-\nobs}
+	\prod_{i=1}^{\nobs} \int \given{\vec{d_i}}{\vec{\theta}} \ppop(\vec{\theta} | \vec{\lambda} ) d\vec{\theta}
 \end{align}
 
 If a prior $\pi(N) \propto 1/N$ is assumed on the population rate, then the posterior can be
@@ -301,7 +301,7 @@ individual masses and spins, sky position, polarization, inclination angle, lumi
 and redshift. The population parameters $\vec{\lambda}$ can be split into three groups: mass, rate
 and cosmological parameters. The mass parameters specify the GW mass model, such as minimum and
 maximum mass, slopes, the positions of any features, etc. These are used in the spectral siren
-method. The rate parametersa are used in the model to describe how the CBC merger rate evolves with
+method. The rate parameters are used in the model to describe how the CBC merger rate evolves with
 redshift. Finally, the cosmological parameters are the constants which appear in
 Eq.~\eqref{eq:intro:distance-redshift-relation}, namely $\{H_0, \Omega_m, \Omega_{de}, w\}$.
 
