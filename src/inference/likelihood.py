@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.special import erf
-from .utils import flat_cosmology
+from .utils import flat_cosmology, gaussian
 
 
 class HierarchicalBayesianLikelihood:
@@ -16,6 +16,14 @@ class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
     def __init__(self, sigma_constant, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.sigma_constant = sigma_constant
+
+    def gw_likelihood(self, z, H0, dl):
+        """
+        See Eq. (21) of arxiv:2212.08694
+        """
+        sigma = self.sigma_constant * dl
+        mean = flat_cosmology(H0).luminosity_distance(z)
+        return gaussian(dl, mean, sigma)
 
     def detection_probability(self, z, H0, dl_th):
         """
