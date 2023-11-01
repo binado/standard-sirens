@@ -18,5 +18,8 @@ class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
         self.sigma_constant = sigma_constant
 
     def detection_probability(self, z, H0, dl_th):
+        """
+        See Eq. (22) of arxiv:2212.08694
+        """
         dl = flat_cosmology(H0).luminosity_distance(z)
         return 0.5 + 0.5 * erf((dl - dl_th) / np.sqrt(2) / self.sigma_constant / dl)

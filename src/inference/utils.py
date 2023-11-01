@@ -1,6 +1,6 @@
 import numpy as np
 from astropy.cosmology import FlatLambdaCDM
-from .constants import *
+from .constants import Om0
 
 
 def gaussian(x, mu, sigma):
