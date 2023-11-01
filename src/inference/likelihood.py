@@ -17,6 +17,13 @@ class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
         super().__init__(*args, **kwargs)
         self.sigma_constant = sigma_constant
 
+    def redshift_likelihood(self, z, z_gal):
+        """
+        See Eq. (17) of arxiv:2212.08694
+        """
+        sigma = 0.0013 * (1 + z) ^ 3
+        return gaussian(z, z_gal, sigma)
+
     def gw_likelihood(self, z, H0, dl):
         """
         See Eq. (21) of arxiv:2212.08694
