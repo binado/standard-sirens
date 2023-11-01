@@ -61,6 +61,7 @@ preprint,
 \newcommand{\pdet}[0]{p_{\text{det}}}
 \newcommand{\ndet}[0]{N_{\text{det}}}
 \newcommand{\nobs}[0]{N_{\text{obs}}}
+\newcommand{\npix}[0]{N_{\text{pix}}}
 \newcommand{\ind}[1]{\mathds{1}_{\{ #1 \}}}
 
 \begin{document}
@@ -304,6 +305,28 @@ maximum mass, slopes, the positions of any features, etc. These are used in the 
 method. The rate parameters are used in the model to describe how the CBC merger rate evolves with
 redshift. Finally, the cosmological parameters are the constants which appear in
 Eq.~\eqref{eq:intro:distance-redshift-relation}, namely $\{H_0, \Omega_m, \Omega_{de}, w\}$.
+
+The angular dependence on $\Omega=\{\text{ra}, \text{dec} \}$ can be made manifest by relabeling
+$\vec{\theta} \to \{\vec{\theta}, \Omega\}$, $\vec{d} \to \{\vec{d}, \hat{\Omega}\}$:
+
+\begin{align}
+	\int \given{\vec{d}}{\vec{\theta}}\ppop (\vec{\theta}| \vec{\lambda})d\vec{\theta}
+	\to \iint \given{\vec{d}, \hat{\Omega}}{\vec{\theta}, \Omega} \ppop (\vec{\theta}| \Omega, \vec{\lambda}) \given{\Omega}{\vec{\lambda}} d\vec{\theta} d\Omega
+\end{align}
+
+In the galaxy catalog method, the $\ppop (\vec{\theta}| \Omega, \vec{\lambda})$ is informed from
+the data. The inferred redshift distribution of galaxies in the catalog may be sensitive to
+$\Omega$. To capture the angular dependence in a computationally tractable way, one can separate
+the sky into $\npix$ equally-sized pixels $\Omega_i$.
+
+\subsection{A first approximation (TODO)}
+
+In this section, we reproduce the formalism developed in Ref.~\onlinecite{Gair_2023}. The authors
+make simplifying assumptions on $p_{det}$, $p_{pop}$ and $\given{\vec{d}}{\vec{\theta}}$:
+
+\begin{itemize}
+	\item The
+\end{itemize}
 
 \bibliography{refs}% Produces the bibliography via BibTeX.
 
