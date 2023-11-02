@@ -10,7 +10,11 @@ __pycache__/
 .vscode/
 
 # Datasets
-**/*.txt
+*.txt
+*.hdf5
+
+# macOS
+.DS_Store
 
 # Latex
 tex/*.aux
