@@ -1,13 +1,46 @@
 import pandas as pd
 import numpy as np
+import healpy as hp
+import h5py
+import argparse
+from pathlib import Path
 import os
 
 
-dirname = os.path.dirname(__file__)
-filename = os.path.join(dirname, "GLADE+reduced.txt")
-chunksize = 100000
-chunk_step_progress_message = 10
+dirname = os.getcwd()
 
+
+# Default options
+default_chunksize = 100000  # Row chunk size in pandas.read_csv
+chunk_step_progress_message = 10
+default_nside = 1024  # nside HEALPIX parameter
+
+# Adding CLI arguments
+argument_parser = argparse.ArgumentParser(
+    prog="parse_catalog", description="Parse GLADE+ catalog"
+)
+argument_parser.add_argument("filename", type=Path)
+argument_parser.add_argument("-o", "--output", default="output.hdf5")
+argument_parser.add_argument(
+    "--nside", type=int, default=default_nside, help="nside HEALPIX parameter"
+)
+argument_parser.add_argument(
+    "-n",
+    "--nrows",
+    default=None,
+    type=int,
+    help="Number of catalog rows to read, useful for debugging",
+)
+argument_parser.add_argument(
+    "-c",
+    "--chunksize",
+    default=default_chunksize,
+    type=int,
+    help="Row chunk size in pandas.read_csv",
+)
+argument_parser.add_argument("-v", "--verbose", action="store_true")
+
+# Types for each data column
 dtypes = {
     "GWGC_flag": str,
     "Hyperleda_flag": str,
@@ -27,27 +60,6 @@ dtypes = {
     "redshift_dl_flag": "Int64",
 }
 
-reader_args = dict(
-    sep=" ",
-    names=dtypes.keys(),
-    dtype=dtypes,
-    header=None,
-    false_values=["null"],
-    chunksize=chunksize,
-)
-
-
-def catalog_mask(df):
-    return np.logical_and.reduce(
-        [
-            (df["z_cmb"].notnull()),
-            (df["z_cmb"] >= 0),
-            (df["Quasar_flag"] == "G"),
-            ((df["redshift_dl_flag"] == 1) | (df["redshift_dl_flag"] == 3)),
-            ~((df["peculiar_velocity_correction_flag"] == 0) & (df["z_cmb"] < 0.05)),
-        ]
-    )
-
 
 def filter_chunk(df):
     # Remove galaxies with non-positive redshift
@@ -62,15 +74,62 @@ def filter_chunk(df):
 
 
 if __name__ == "__main__":
+    # Parse command line args
+    args = argument_parser.parse_args()
+    chunksize = args.chunksize
+    verbose = args.verbose
+    nside = args.nside
+    nrows = args.nrows
+    filename = os.path.join(dirname, args.filename)
+    output = args.output
+
+    reader_args = dict(
+        sep=" ",
+        names=dtypes.keys(),
+        dtype=dtypes,
+        header=None,
+        false_values=["null"],
+        chunksize=chunksize,
+        nrows=nrows,
+    )
+
     catalog = pd.DataFrame()
     with pd.read_csv(filename, **reader_args) as reader:
+        if verbose:
+            print("Starting catalog parsing...")
+            print(f"Reader chunk size: {chunksize}")
+            if nrows is not None:
+                print(f"Parsing the first {nrows} galaxies")
+
         for index, chunk in enumerate(reader):
             # print(f"chunk has {chunk.shape[0]} rows")
             catalog = pd.concat([catalog, filter_chunk(chunk)], ignore_index=True)
-            if (index + 1) % chunk_step_progress_message == 0:
+            if verbose and (index + 1) % chunk_step_progress_message == 0:
                 print(f"Parsed chunk number {index + 1}")
                 print(f"Parsed catalog has {catalog.shape[0]} rows")
                 print(f"{chunksize * (index + 1) - catalog.shape[0]} rows filtered out")
+                print(
+                    "{:.1f}% rows included".format(
+                        100 * catalog.shape[0] / chunksize / (index + 1)
+                    )
+                )
                 print("-------------------------------------------")
 
-    print("catalog has a total of " + str(len(catalog)) + " objects.")
+    # Extract data from catalog
+    # (theta, phi) = (ra * 180 / pi + pi/2, dec * 180 / pi)
+    ra = catalog["ra"] * np.pi / 180
+    dec = catalog["dec"] * np.pi / 180
+    skymap = hp.ang2pix(nside, dec + np.pi / 2, ra)
+    z = catalog["z_cmb"]
+
+    # Build output file
+    with h5py.File(output, "w") as f:
+        if verbose:
+            print("Creating output datasets...")
+
+        f.create_dataset("ra", data=ra)
+        f.create_dataset("dec", data=dec)
+        f.create_dataset("skymap", data=skymap)
+        f.create_dataset("z", data=z)
+
+    print("Done!")
