@@ -73,6 +73,14 @@ def filter_chunk(df):
     return df
 
 
+def create_or_overwrite_dataset(file, dataset, data):
+    try:
+        old_data = file[dataset]
+        old_data[...] = data
+    except KeyError:
+        file.create_dataset(dataset, data=data)
+
+
 if __name__ == "__main__":
     # Parse command line args
     args = argument_parser.parse_args()
@@ -122,14 +130,20 @@ if __name__ == "__main__":
     skymap = hp.ang2pix(nside, dec + np.pi / 2, ra)
     z = catalog["z_cmb"]
 
+    # Remove output file if it already exists
+    # Hack to prevent OSError
+    # if os.path.exists(output):
+    #     os.remove(output)
+
     # Build output file
-    with h5py.File(output, "w") as f:
+    with h5py.File(output, "a") as f:
         if verbose:
             print("Creating output datasets...")
 
-        f.create_dataset("ra", data=ra)
-        f.create_dataset("dec", data=dec)
-        f.create_dataset("skymap", data=skymap)
-        f.create_dataset("z", data=z)
+        create_or_overwrite_dataset(f, "ra", data=ra)
+        create_or_overwrite_dataset(f, "dec", data=dec)
+        create_or_overwrite_dataset(f, "skymap", data=skymap)
+        create_or_overwrite_dataset(f, "z", data=z)
+        f.attrs["nside"] = nside
 
     print("Done!")
