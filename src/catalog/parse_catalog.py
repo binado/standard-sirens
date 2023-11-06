@@ -19,8 +19,10 @@ default_nside = 1024  # nside HEALPIX parameter
 argument_parser = argparse.ArgumentParser(
     prog="parse_catalog", description="Parse GLADE+ catalog"
 )
-argument_parser.add_argument("filename", type=Path)
-argument_parser.add_argument("-o", "--output", default="output.hdf5")
+argument_parser.add_argument("filename", type=Path, help="Catalog file name")
+argument_parser.add_argument(
+    "-o", "--output", default="output.hdf5", help="Output file name"
+)
 argument_parser.add_argument(
     "--nside", type=int, default=default_nside, help="nside HEALPIX parameter"
 )
@@ -73,8 +75,13 @@ def filter_chunk(df):
     return df
 
 
-def create_or_overwrite_dataset(file, dataset, data):
+def create_or_overwrite_dataset(file: h5py.File, dataset, data):
+    """
+    Overwrite existing dataset with new data for a hdf5 file.
+    If such dataset does not exist, create one and populate it
+    """
     try:
+        # See https://stackoverflow.com/a/22925117
         old_data = file[dataset]
         old_data[...] = data
     except KeyError:
@@ -129,11 +136,6 @@ if __name__ == "__main__":
     dec = catalog["dec"] * np.pi / 180
     skymap = hp.ang2pix(nside, dec + np.pi / 2, ra)
     z = catalog["z_cmb"]
-
-    # Remove output file if it already exists
-    # Hack to prevent OSError
-    # if os.path.exists(output):
-    #     os.remove(output)
 
     # Build output file
     with h5py.File(output, "a") as f:
