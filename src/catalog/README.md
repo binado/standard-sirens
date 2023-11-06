@@ -1,3 +1,11 @@
 We use the [GLADE+](https://glade.elte.hu/) catalog, which combines data from six astronomical catalogues.
 
-The data can be downloaded with the `get_catalog` script. Post-processing has not been implemented yet, but a benchmark to study is the [`gwcosmo` implementation](https://git.ligo.org/lscsoft/gwcosmo/-/blob/master/scripts_galaxy_catalogs/GLADE%2B/create_glade%2B.py).
+The raw data can be downloaded with the [`get_catalog`](./get_catalog.sh) script. Post-processing is implemented in the [`parse_catalog`](./parse_catalog.py) script. Run
+
+```bash
+python parse_catalog.py --help
+```
+
+for more details.
+
+This [`notebook`](./visualize_catalog.ipynb) helps visualizing the parsed data.
