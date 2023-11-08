@@ -36,7 +36,7 @@ class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
     def __init__(
         self,
         *args,
-        sigma_constant,
+        sigma_constant=0.1,
         fiducial_H0=70,
         z_draw_max=1.4,
         dl_th=1550,
@@ -63,18 +63,26 @@ class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
         p_rate = self.uniform_p_rate(z_gal)
 
         # Get the "true" gw redshifts
-        drawn_z_gws = np.random.choice(z_gal, n_gw, p=p_rate)
+        drawn_gw_zs = np.random.choice(z_gal, n_gw, p=p_rate)
 
         # Convert them into "true" gw luminosity distances using a fiducial cosmology
-        drawn_dl_gws = (
-            self.fiducial_cosmology.luminosity_distance(drawn_z_gws).to("Mpc").value
+        drawn_gw_dls = (
+            self.fiducial_cosmology.luminosity_distance(drawn_gw_zs).to("Mpc").value
         )
 
-        return drawn_dl_gws
+        # Convert true gw luminosity distances into measured values
+        # drawn from a normal distribution consistent with the GW likelihood
+        observed_gw_dls = np.array(
+            [
+                np.random.normal(gw_dl, gw_dl * self.sigma_constant)
+                for gw_dl in drawn_gw_dls
+            ]
+        )
+        return observed_gw_dls
 
     def population_prior(self, H0, z, z_gal):
         redshift_likelihood = self.redshift_likelihood(z, z_gal)
-        redshift_prior = flat_cosmology(H0).differential_comoving_volume(z)
+        redshift_prior = flat_cosmology(H0).differential_comoving_volume(z).value
         normalization = simpson(z, redshift_likelihood * redshift_prior)
         return redshift_likelihood * redshift_prior / normalization
 
@@ -115,7 +123,7 @@ class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
         p_rate = self.uniform_p_rate(z_gal)
 
         # Convert galaxy redshifts into luminosity distance using fixed H0
-        fiducial_dl = self.fiducial_cosmology.luminosity_distance(z_gal)
+        fiducial_dl = self.fiducial_cosmology.luminosity_distance(z_gal).to("Mpc").value
 
         # Exploit that luminosity distance is linear with 1/H0
         # to efficiently compute dl for arbitrary H0
@@ -132,7 +140,9 @@ class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
         if not self.ignore_z_error:
             raise NotImplementedError
 
-        likelihood_matrix = np.zeros_like((gw_dl_array, H0_array))
+        (n_gw,) = gw_dl_array.shape
+        (n_H0,) = H0_array.shape
+        likelihood_matrix = np.zeros((n_gw, n_H0))
         for i, gw_dl in enumerate(gw_dl_array):
             likelihood_matrix[i, :] = self.single_event_likelihood(
                 gw_dl, H0_array, z_gal

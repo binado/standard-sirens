@@ -34,6 +34,9 @@ argument_parser.add_argument(
     help="Number of catalog rows to read, useful for debugging",
 )
 argument_parser.add_argument(
+    "--nest", action="store_true", help="nest parameter when pixelizing with HEALPIX"
+)
+argument_parser.add_argument(
     "-c",
     "--chunksize",
     default=default_chunksize,
@@ -95,6 +98,7 @@ if __name__ == "__main__":
     verbose = args.verbose
     nside = args.nside
     nrows = args.nrows
+    nest = args.nest
     filename = os.path.join(dirname, args.filename)
     output = args.output
 
@@ -134,7 +138,7 @@ if __name__ == "__main__":
     # (theta, phi) = (ra * 180 / pi + pi/2, dec * 180 / pi)
     ra = catalog["ra"] * np.pi / 180
     dec = catalog["dec"] * np.pi / 180
-    skymap = hp.ang2pix(nside, dec + np.pi / 2, ra)
+    skymap = hp.ang2pix(nside, dec + np.pi / 2, ra, nest=nest)
     z = catalog["z_cmb"]
 
     # Build output file
@@ -147,5 +151,6 @@ if __name__ == "__main__":
         create_or_overwrite_dataset(f, "skymap", data=skymap)
         create_or_overwrite_dataset(f, "z", data=z)
         f.attrs["nside"] = nside
+        f.attrs["nest"] = nest
 
     print("Done!")
