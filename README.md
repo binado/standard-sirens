@@ -9,5 +9,5 @@ Instruction on how to run the code will be added later.
 With conda:
 
 ```bash
-conda env create -f condaenv.yml
+conda create --name <env> -f requirements.txt
 ```
