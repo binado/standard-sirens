@@ -91,7 +91,7 @@ class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
         Compute galaxy redshift likelihood p(z_gal_measured | z_gal_true)
         See Eq. (17)
         """
-        sigma = 0.0013 * (1 + z) ^ 3
+        sigma = 0.0013 * (1 + z) ** 3
         return gaussian(z, z_gal, sigma)
 
     def gw_likelihood(self, dl, true_dl):
