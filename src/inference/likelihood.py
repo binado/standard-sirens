@@ -100,55 +100,80 @@ class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
     def gw_likelihood(self, dl, true_dl):
         """
         Compute gw likelihood L(dl_gw | z, H0)
+
         See Eq. (21)
         """
-        sigma = self.sigma_constant * dl
+        sigma = self.sigma_constant * true_dl
         return gaussian(dl, true_dl, sigma)
 
     def detection_probability(self, dl):
         """
-        Compute GW likelihood selection effects
+        Return GW likelihood selection effects for a particular d_L
+
         See Eq. (22)
         """
         sigma = self.sigma_constant * dl
-        return 0.5 + 0.5 * erf((dl - self.dl_th) / np.sqrt(2) / sigma)
+        x = (self.dl_th - dl) / sigma
+        return 0.5 * (1.0 + erf(x / np.sqrt(2)))
 
-    def single_event_likelihood(self, gw_dl, H0_array, z_gal):
+    def dl_from_H0_array_and_z_gal(self, H0_array, z_gal):
         """
-        Compute single event likelihood
-        Uses Eq. (15) when uncertainties on galaxy redshift are neglected
+        Return a n_H0 x n_gal grid of 'true' luminosity distance values
         """
-        if not self.ignore_z_error:
-            raise NotImplementedError
-
-        likelihood_array = np.zeros_like(H0_array)
-
-        p_rate = self.uniform_p_rate(z_gal)
-
         # Convert galaxy redshifts into luminosity distance using fixed H0
-        fiducial_dl = self.fiducial_cosmology.luminosity_distance(z_gal).to("Mpc").value
-
-        # Exploit that luminosity distance is linear with 1/H0
+        fiducial_dl = self.luminosity_distance(z_gal)
+        # Exploit that luminosity distance * H0 is independent of H0 for fixed fixed \Omega_i's
         # to efficiently compute dl for arbitrary H0
         fiducial_dl_times_H0 = fiducial_dl * self.fiducial_cosmology.H0.value
-        for i, H0 in enumerate(H0_array):
-            dl = fiducial_dl_times_H0 / H0
-            numerator = np.sum(self.gw_likelihood(gw_dl, dl) * p_rate)
-            denominator = np.sum(self.detection_probability(dl) * p_rate)
-            likelihood_array[i] = numerator / denominator
+        return np.array([fiducial_dl_times_H0 / H0 for H0 in H0_array])
 
-        return likelihood_array
+    def gw_likelihood_array(self, dl, H0_array, z_gal):
+        """
+        Return the sum over galaxies of p(d_L | d_L(H0, z_gal)) for each H0
+        """
+        p_rate = self.uniform_p_rate(z_gal)
+        dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z_gal(H0_array, z_gal)
+        return np.dot(self.gw_likelihood(dl, dl_by_H0_by_gal_matrix), p_rate)
 
-    def likelihood(self, gw_dl_array, H0_array, z_gal):
+    def selection_effects(self, H0_array, z_gal):
+        """
+        Return an array with GW likelihood selection effects for each H0 in the array
+        """
+        p_rate = self.uniform_p_rate(z_gal)
+        dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z_gal(H0_array, z_gal)
+        detection_prob = self.detection_probability(dl_by_H0_by_gal_matrix)
+        return np.dot(detection_prob, p_rate)
+
+    def likelihood(self, gw_dl_array, H0_array, z_gal, n_dir=1):
         if not self.ignore_z_error:
             raise NotImplementedError
 
-        (n_gw,) = gw_dl_array.shape
-        (n_H0,) = H0_array.shape
-        likelihood_matrix = np.zeros((n_gw, n_H0))
-        for i, gw_dl in enumerate(gw_dl_array):
-            likelihood_matrix[i, :] = self.single_event_likelihood(
-                gw_dl, H0_array, z_gal
-            )
+        n_H0 = H0_array.shape[0]
+        n_gw = np.sum([len(gw_dl) for gw_dl in gw_dl_array])
+        current_gw_idx = 0
+        likelihood_matrix = np.ones((n_gw, n_H0))
+
+        # Each direction has a different set of candidate galaxies
+        if n_dir > 1:
+            assert len(z_gal) == len(gw_dl_array)
+            assert len(z_gal) == n_dir
+            # Loop through directions
+            for i, (gws_in_dir_i, z_gal_i) in enumerate(zip(gw_dl_array, z_gal)):
+                selection_effects = self.selection_effects(H0_array, z_gal_i)
+                # Loop through GWs for a fixed direction
+                for gw_dl_j in gws_in_dir_i:
+                    likelihood_matrix[current_gw_idx, :] = (
+                        self.gw_likelihood_array(gw_dl_j, H0_array, z_gal_i)
+                        / selection_effects
+                    )
+                    current_gw_idx += 1
+            assert current_gw_idx == n_gw
+        # GWs share the same set of host galaxies
+        else:
+            selection_effects = self.selection_effects(H0_array, z_gal)
+            for i, gw_dl in enumerate(gw_dl_array):
+                likelihood_matrix[i, selection_effects > 0] = (
+                    self.gw_likelihood_array(gw_dl, H0_array, z_gal) / selection_effects
+                )
 
         return combine_posteriors(likelihood_matrix, H0_array)
