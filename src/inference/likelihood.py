@@ -74,19 +74,14 @@ class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
         drawn_gw_zs = np.random.choice(z_gal, n_gw, p=p_rate)
 
         # Convert them into "true" gw luminosity distances using a fiducial cosmology
-        drawn_gw_dls = (
-            self.fiducial_cosmology.luminosity_distance(drawn_gw_zs).to("Mpc").value
-        )
+        drawn_gw_dls = self.luminosity_distance(drawn_gw_zs)
 
         # Convert true gw luminosity distances into measured values
         # drawn from a normal distribution consistent with the GW likelihood
-        observed_gw_dls = np.array(
-            [
-                np.random.normal(gw_dl, gw_dl * self.sigma_constant)
-                for gw_dl in drawn_gw_dls
-            ]
-        )
-        return observed_gw_dls
+        sigma_dl = drawn_gw_dls * self.sigma_constant
+        observed_gw_dls = np.random.standard_normal(n_gw) * sigma_dl + drawn_gw_dls
+        # Filter events whose dL exceeds treshold
+        return observed_gw_dls[observed_gw_dls < self.dl_th]
 
     def population_prior(self, H0, z, z_gal):
         redshift_likelihood = self.redshift_likelihood(z, z_gal)
