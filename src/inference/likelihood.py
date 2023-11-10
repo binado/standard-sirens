@@ -51,6 +51,13 @@ class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
         self.z_draw_max = z_draw_max
         self.ignore_z_error = ignore_z_error
 
+    def luminosity_distance(self, z):
+        """
+        Return value of luminosity distance at redshift z in Mpc
+        for a flat LambdaCDM cosmology with fiducial H0
+        """
+        return self.fiducial_cosmology.luminosity_distance(z).to("Mpc").value
+
     def uniform_p_rate(self, z_gal):
         p_rate = np.zeros_like(z_gal)
         p_rate[z_gal <= self.z_draw_max] = 1
