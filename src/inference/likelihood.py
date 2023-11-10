@@ -80,7 +80,7 @@ class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
         # drawn from a normal distribution consistent with the GW likelihood
         sigma_dl = drawn_gw_dls * self.sigma_constant
         observed_gw_dls = np.random.standard_normal(n_gw) * sigma_dl + drawn_gw_dls
-        # Filter events whose dL exceeds treshold
+        # Filter events whose dL exceeds threshold
         return observed_gw_dls[observed_gw_dls < self.dl_th]
 
     def population_prior(self, H0, z, z_gal):
@@ -92,6 +92,7 @@ class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
     def redshift_likelihood(self, z, z_gal):
         """
         Compute galaxy redshift likelihood p(z_gal_measured | z_gal_true)
+
         See Eq. (17)
         """
         sigma = 0.0013 * (1 + z) ** 3
