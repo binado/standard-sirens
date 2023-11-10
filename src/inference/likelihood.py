@@ -18,8 +18,9 @@ def combine_posteriors(posterior_matrix, param_arr):
 
         # Normalize combined posterior with event i
         combined_posterior *= posterior_matrix[i, :]
-        combined_posterior /= simpson(combined_posterior, param_arr)
+        # combined_posterior /= simpson(combined_posterior, param_arr)
 
+    combined_posterior /= simpson(combined_posterior, param_arr)
     return combined_posterior, posterior_matrix
 
 
