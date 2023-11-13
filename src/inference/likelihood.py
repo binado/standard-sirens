@@ -171,7 +171,7 @@ class DrawnGWPerfectRedshiftLikelihood(DrawnGWLikelihood):
         else:
             selection_effects = self.selection_effects(H0_array, z_gal)
             for i, gw_dl in enumerate(gw_dl_array):
-                likelihood_matrix[i, selection_effects > 0] = (
+                likelihood_matrix[i, :] = (
                     self.gw_likelihood_array(gw_dl, H0_array, z_gal) / selection_effects
                 )
 
