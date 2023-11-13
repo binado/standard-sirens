@@ -29,27 +29,27 @@ class HierarchicalBayesianLikelihood:
         pass
 
 
-class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
+class DrawnGWLikelihood(HierarchicalBayesianLikelihood):
     """
-    Simplified likelihood based on arxiv:2212.08694.
+    Base class with helper methods for implementing
+    the likelihood model based on arxiv:2212.08694.
     """
 
     def __init__(
         self,
-        *args,
         sigma_constant=0.1,
         fiducial_H0=70,
         z_draw_max=1.4,
         dl_th=1550,
-        ignore_z_error=False,
-        **kwargs
     ) -> None:
-        super().__init__(*args, **kwargs)
         self.sigma_constant = sigma_constant
         self.fiducial_cosmology = flat_cosmology(fiducial_H0)
         self.dl_th = dl_th
         self.z_draw_max = z_draw_max
-        self.ignore_z_error = ignore_z_error
+
+    @property
+    def H0(self):
+        return self.fiducial_cosmology.H0.value
 
     def luminosity_distance(self, z):
         """
@@ -57,37 +57,6 @@ class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
         for a flat LambdaCDM cosmology with fiducial H0
         """
         return self.fiducial_cosmology.luminosity_distance(z).to("Mpc").value
-
-    def uniform_p_rate(self, z_gal):
-        p_rate = np.zeros_like(z_gal)
-        p_rate[z_gal <= self.z_draw_max] = 1
-        return p_rate / np.sum(p_rate)
-
-    def draw_gw_events(self, z_gal, n_gw):
-        if not self.ignore_z_error:
-            raise NotImplementedError
-
-        # Uniform merger probability on 0 < z < z_draw_max
-        p_rate = self.uniform_p_rate(z_gal)
-
-        # Get the "true" gw redshifts
-        drawn_gw_zs = np.random.choice(z_gal, n_gw, p=p_rate)
-
-        # Convert them into "true" gw luminosity distances using a fiducial cosmology
-        drawn_gw_dls = self.luminosity_distance(drawn_gw_zs)
-
-        # Convert true gw luminosity distances into measured values
-        # drawn from a normal distribution consistent with the GW likelihood
-        sigma_dl = drawn_gw_dls * self.sigma_constant
-        observed_gw_dls = np.random.standard_normal(n_gw) * sigma_dl + drawn_gw_dls
-        # Filter events whose dL exceeds threshold
-        return observed_gw_dls[observed_gw_dls < self.dl_th]
-
-    def population_prior(self, H0, z, z_gal):
-        redshift_likelihood = self.redshift_likelihood(z, z_gal)
-        redshift_prior = flat_cosmology(H0).differential_comoving_volume(z).value
-        normalization = simpson(z, redshift_likelihood * redshift_prior)
-        return redshift_likelihood * redshift_prior / normalization
 
     def redshift_likelihood(self, z, z_gal):
         """
@@ -117,23 +86,53 @@ class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
         x = (self.dl_th - dl) / sigma
         return 0.5 * (1.0 + erf(x / np.sqrt(2)))
 
-    def dl_from_H0_array_and_z_gal(self, H0_array, z_gal):
+    def dl_from_H0_array_and_z(self, H0_array, z):
         """
-        Return a n_H0 x n_gal grid of 'true' luminosity distance values
+        Return a n_H0 x n_z grid of 'true' luminosity distance values
         """
-        # Convert galaxy redshifts into luminosity distance using fixed H0
-        fiducial_dl = self.luminosity_distance(z_gal)
+        # Convert redshifts into luminosity distance using fixed H0
+        fiducial_dl = self.luminosity_distance(z)
         # Exploit that luminosity distance * H0 is independent of H0 for fixed fixed \Omega_i's
         # to efficiently compute dl for arbitrary H0
-        fiducial_dl_times_H0 = fiducial_dl * self.fiducial_cosmology.H0.value
+        fiducial_dl_times_H0 = fiducial_dl * self.H0
         return np.array([fiducial_dl_times_H0 / H0 for H0 in H0_array])
+
+    def uniform_p_rate(self, z_gal):
+        p_rate = np.zeros_like(z_gal)
+        p_rate[z_gal <= self.z_draw_max] = 1
+        return p_rate / np.sum(p_rate)
+
+    def draw_gw_events(self, z_gal, n_gw):
+        # Uniform merger probability on 0 < z < z_draw_max
+        p_rate = self.uniform_p_rate(z_gal)
+
+        # Get the "true" gw redshifts
+        drawn_gw_zs = np.random.choice(z_gal, n_gw, p=p_rate)
+
+        # Convert them into "true" gw luminosity distances using a fiducial cosmology
+        drawn_gw_dls = self.luminosity_distance(drawn_gw_zs)
+
+        # Convert true gw luminosity distances into measured values
+        # drawn from a normal distribution consistent with the GW likelihood
+        sigma_dl = drawn_gw_dls * self.sigma_constant
+        observed_gw_dls = np.random.standard_normal(n_gw) * sigma_dl + drawn_gw_dls
+        # Filter events whose dL exceeds threshold
+        return observed_gw_dls[observed_gw_dls < self.dl_th]
+
+
+class DrawnGWPerfectRedshiftLikelihood(DrawnGWLikelihood):
+    """
+    Implements likelihood model in the limit of perfect galaxy redshift measurements
+
+    See Eq. (15)
+    """
 
     def gw_likelihood_array(self, dl, H0_array, z_gal):
         """
         Return the sum over galaxies of p(d_L | d_L(H0, z_gal)) for each H0
         """
         p_rate = self.uniform_p_rate(z_gal)
-        dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z_gal(H0_array, z_gal)
+        dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z(H0_array, z_gal)
         return np.dot(self.gw_likelihood(dl, dl_by_H0_by_gal_matrix), p_rate)
 
     def selection_effects(self, H0_array, z_gal):
@@ -141,14 +140,98 @@ class SimplifiedLikelihood(HierarchicalBayesianLikelihood):
         Return an array with GW likelihood selection effects for each H0 in the array
         """
         p_rate = self.uniform_p_rate(z_gal)
-        dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z_gal(H0_array, z_gal)
+        dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z(H0_array, z_gal)
         detection_prob = self.detection_probability(dl_by_H0_by_gal_matrix)
         return np.dot(detection_prob, p_rate)
 
     def likelihood(self, gw_dl_array, H0_array, z_gal, n_dir=1):
-        if not self.ignore_z_error:
-            raise NotImplementedError
+        n_H0 = H0_array.shape[0]
+        n_gw = np.sum([len(gw_dl) for gw_dl in gw_dl_array])
+        current_gw_idx = 0
+        likelihood_matrix = np.ones((n_gw, n_H0))
 
+        # Each direction has a different set of candidate galaxies
+        if n_dir > 1:
+            assert len(z_gal) == len(gw_dl_array)
+            assert len(z_gal) == n_dir
+            # Loop through directions
+            for i, (gws_in_dir_i, z_gal_i) in enumerate(zip(gw_dl_array, z_gal)):
+                selection_effects = self.selection_effects(H0_array, z_gal_i)
+                # Loop through GWs for a fixed direction
+                for gw_dl_j in gws_in_dir_i:
+                    likelihood_matrix[current_gw_idx, :] = (
+                        self.gw_likelihood_array(gw_dl_j, H0_array, z_gal_i)
+                        / selection_effects
+                    )
+                    current_gw_idx += 1
+            assert current_gw_idx == n_gw
+        # GWs share the same set of host galaxies
+        else:
+            selection_effects = self.selection_effects(H0_array, z_gal)
+            for i, gw_dl in enumerate(gw_dl_array):
+                likelihood_matrix[i, selection_effects > 0] = (
+                    self.gw_likelihood_array(gw_dl, H0_array, z_gal) / selection_effects
+                )
+
+        return combine_posteriors(likelihood_matrix, H0_array)
+
+
+class DrawnGWFullLikelihood(DrawnGWLikelihood):
+    """
+    Implements full likelihood model
+
+    See Eq. (29)
+    """
+
+    # def __init__(
+    #     self,
+    #     *args,
+    #     sigma_constant=0.1,
+    #     fiducial_H0=70,
+    #     z_draw_max=1.4,
+    #     dl_th=1550,
+    #     ignore_z_error=False,
+    #     **kwargs
+    # ) -> None:
+    #     super().__init__(*args, **kwargs)
+    #     self.sigma_constant = sigma_constant
+    #     self.fiducial_cosmology = flat_cosmology(fiducial_H0)
+    #     self.dl_th = dl_th
+    #     self.z_draw_max = z_draw_max
+    #     self.ignore_z_error = ignore_z_error
+
+    def p_cbc(self, z, z_gal_i, normalize=False):
+        """
+        Return p(z_gal_i | z) p_bg (z) p_rate (z)
+        """
+        p_rate = 1 / (1 + z)  # See Eq. (5)
+        p_bg = self.fiducial_cosmology.differential_comoving_volume(z)
+        likelihood = self.redshift_likelihood(z, z_gal_i)
+
+        p_cbc = likelihood * p_bg * p_rate
+        if normalize:
+            p_cbc /= simpson(p_cbc, z)
+
+        return p_cbc
+
+    def gw_likelihood_array(self, dl, H0_array, z_gal):
+        """
+        Return the sum over galaxies of p(d_L | d_L(H0, z_gal)) for each H0
+        """
+        p_rate = self.uniform_p_rate(z_gal)
+        dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z(H0_array, z_gal)
+        return np.dot(self.gw_likelihood(dl, dl_by_H0_by_gal_matrix), p_rate)
+
+    def selection_effects(self, H0_array, z_gal):
+        """
+        Return an array with GW likelihood selection effects for each H0 in the array
+        """
+        p_rate = self.uniform_p_rate(z_gal)
+        dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z(H0_array, z_gal)
+        detection_prob = self.detection_probability(dl_by_H0_by_gal_matrix)
+        return np.dot(detection_prob, p_rate)
+
+    def likelihood(self, gw_dl_array, H0_array, z_gal, n_dir=1):
         n_H0 = H0_array.shape[0]
         n_gw = np.sum([len(gw_dl) for gw_dl in gw_dl_array])
         current_gw_idx = 0
