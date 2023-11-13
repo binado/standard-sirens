@@ -41,11 +41,13 @@ class DrawnGWLikelihood(HierarchicalBayesianLikelihood):
         fiducial_H0=70,
         z_draw_max=1.4,
         dl_th=1550,
+        max_redshift_err=0.0015,
     ) -> None:
         self.sigma_constant = sigma_constant
         self.fiducial_cosmology = flat_cosmology(fiducial_H0)
         self.dl_th = dl_th
         self.z_draw_max = z_draw_max
+        self.max_redshift_err = max_redshift_err
 
     @property
     def H0(self):
@@ -64,7 +66,7 @@ class DrawnGWLikelihood(HierarchicalBayesianLikelihood):
 
         See Eq. (17)
         """
-        sigma = 0.0013 * (1 + z) ** 3
+        sigma = np.minimum(0.0013 * (1 + z) ** 3, self.max_redshift_err)
         return gaussian(z, z_gal, sigma)
 
     def gw_likelihood(self, dl, true_dl):
