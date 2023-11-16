@@ -62,6 +62,9 @@ preprint,
 \newcommand{\ndet}[0]{N_{\text{det}}}
 \newcommand{\nobs}[0]{N_{\text{obs}}}
 \newcommand{\npix}[0]{N_{\text{pix}}}
+\newcommand{\ngal}[0]{N_{\text{gal}}}
+\newcommand{\dgw}[0]{\vec{d}_{\text{GW}}}
+\newcommand{\dem}[0]{\vec{d}_{\text{EM}}}
 \newcommand{\ind}[1]{\mathds{1}_{\{ #1 \}}}
 
 \begin{document}
@@ -123,27 +126,23 @@ To lighten notation, we have omitted the 0-subscript next to the $\Omega_i$'s, a
 correspond to the present day values in the above equation. Note that using
 Eq.~\eqref{eq:intro:distance-redshift-relation} requires specifying a cosmological model.
 
-\subsection{Gravitational-wave distances}
-
 The accuracy of the GW luminosity distance measurement is typically of the order of 10\%. The main
 source of uncertainty comes from the degeneracy between the distance and inclination angle of the
 source. The latter is defined as the angle between the line-of-sight vector from the source to the
 detector and the orbital-angular momentum of the binary system.
 
-\subsection{Assigning redshifts to GW sources}
-
 From the GW data, it is possible to infer the luminosity distance to the binary source, but not the
-redshift, as the latter comes degenerate with the chirp mass in the GW waveform modelling. It is
-therefore necessary to complement it with another source of information that provides the redshift
-measurement. Multi-messenger observations, such as neutron star mergers with electromagnetic
-counterparts like short gamma-ray bursts or kilonovae, provide the most straight-forward
-measurement \cite{Holz:2005df,Dalal:2006qt}. An electromagnetic counterpart like a kilonova can
-typically be pinpointed to a specific galaxy, thereby identifying the host galaxy of the GW merger.
-The GW signal provides the distance to the host galaxy, while its electromagnetic spectrum provides
-the redshift. These sources are typically referred to as bright sirens. So far, the only confirmed
-such event has been the binary neutron star detection GW170817, which occurred so exceptionally
-close to our galaxy - at $d \sim 40$Mpc - that a direct, model-independent estimation of $H_0$ with
-Hubble's law,
+redshift, as the latter is degenerate with the chirp mass in the GW waveform modelling. It is
+therefore necessary to complement the data with another source of information that provides the
+redshift measurement. Multi-messenger observations, such as neutron star mergers with
+electromagnetic counterparts like short gamma-ray bursts or kilonovae, provide the most
+straight-forward measurement \cite{Holz:2005df,Dalal:2006qt}. An electromagnetic counterpart like a
+kilonova can typically be pinpointed to a specific galaxy, thereby identifying the host galaxy of
+the GW merger. The GW signal provides the distance to the host galaxy, while its electromagnetic
+spectrum provides the redshift. These sources are typically referred to as bright sirens. So far,
+the only confirmed such event has been the binary neutron star detection GW170817, which occurred
+so exceptionally close to our galaxy - at $d \sim 40$Mpc - that a direct, model-independent
+estimation of $H_0$ with Hubble's law,
 
 \begin{equation}
 	v_H = H_0 d,
@@ -155,17 +154,34 @@ km s$^{-1}$ Mpc$^{-1}$~\cite{LIGOScientific:2017adf}.
 As stated above, almost all GW events have been detected without an EM counterpart. These
 \textit{dark sirens} can be used to probe the expansion of the universe provided that they are
 complemented with an external redshift measurement. In his original paper, Schutz suggested that
-this information could be inferred from galaxy catalogs: each galaxy contributes to a hypothetical
-measurement of $H_0$, such that the galaxy structure within a GW event's localisation volume is
-reflected in the H0 posterior it produces. How informative the individual events are will depend
-strongly on their localisation volumes. By combining the contributions of many events, the true
-value of $H_0$ will be measured as other values will statistically average out. Such analyses have
-been carried out in the literature,
+this information could be inferred from galaxy catalogs: each galaxy's redshift contributes to a
+hypothetical estimation of $H_0$, such that the galaxy structure within a GW event's localisation
+volume is reflected in the $H_0$ posterior it produces. How informative the individual events are
+will depend strongly on their localisation volumes. By combining the contributions of many events,
+the true value of $H_0$ will be measured as other values will statistically average out. Such
+analyses have been carried out in the literature,
 see~\cite{DelPozzo:2011vcw,Chen:2017rfc,LIGOScientific:2018gmd,Gray:2019ksv,DES:2019ccw,DES:2020nay}.
 
+At higher redshifts, galaxy-wide surveys are incomplete, and the probability that the catalog
+contains the merger's host galaxy decreases. On the other hand, both the the gravitational wave
+sources and galaxies are tracers of the matter density, and therefore, they are spatially
+correlated through the underlying matter field. Therefore, if the events are well localized,
+angular correlations between galaxy distributions in redshift and merger distributions in
+luminosity distance may be used to infer cosmological parameters. Some authors have explored this
+idea with forecasts for 3G detectors~\cite{Oguri_2016}. Refs.~\onlinecite{Bera_2020,Mukherjee_2021}
+used simulated data to analyse the method's constraining power on $H_0$ for different numbers of
+events. Their results show that the Hubble constant can be measured with $~ 2.5\%$ accuracy for
+$\mathcal{O}$(100) events. Finally, this technique is not exclusive to standard sirens, and can be
+applied to any redshift-free distance tracer, such as type Ia
+supernovae~\cite{mukherjee2018classical}.
+
+Another method in the literature consists of assuming a model for the mergers distribution on
+redshift based on the star formation rate and time delay distribution of binary mergers (INCLUDE
+VALERIO STURANI CITATION).
+
 This manuscript is organized as follows. In Sec.~\ref{sec:framework}, we will go over the
-statistical formalism to perform data analysis with standard sirens, and we will specialize in the
-galaxy catalog method.
+statistical formalism for data analysis with standard sirens, and we will specialize in the galaxy
+catalog method.
 
 \section{\label{sec:framework}Statistical framework}
 
@@ -301,28 +317,38 @@ The individual event parameters $\vec{\theta}$ describe the compact binary coale
 individual masses and spins, sky position, polarization, inclination angle, luminosity distance,
 and redshift. The population parameters $\vec{\lambda}$ can be split into three groups: mass, rate
 and cosmological parameters. The mass parameters specify the GW mass model, such as minimum and
-maximum mass, slopes, the positions of any features, etc. These are used in the spectral siren
-method. The rate parameters are used in the model to describe how the CBC merger rate evolves with
-redshift. Finally, the cosmological parameters are the constants which appear in
-Eq.~\eqref{eq:intro:distance-redshift-relation}, namely $\{H_0, \Omega_m, \Omega_{de}, w\}$.
+maximum mass, slopes, the positions of any features in the mass distribution function, etc. These
+are used in the spectral siren method. The rate parameters are used in the model to describe how
+the CBC merger rate evolves with redshift. Finally, the cosmological parameters are the constants
+which appear in Eq.~\eqref{eq:intro:distance-redshift-relation}, namely $\{H_0, \Omega_m,
+	\Omega_{de}, w\}$.
 
 The angular dependence on $\Omega=\{\text{ra}, \text{dec} \}$ can be made manifest by relabeling
 $\vec{\theta} \to \{\vec{\theta}, \Omega\}$, $\vec{d} \to \{\vec{d}, \hat{\Omega}\}$:
 
 \begin{align}
+	\label{eq:stat:explicit-marginalized-omega}
 	\int \given{\vec{d}}{\vec{\theta}}\ppop (\vec{\theta}| \vec{\lambda})d\vec{\theta}
 	\to \iint \given{\vec{d}, \hat{\Omega}}{\vec{\theta}, \Omega} \ppop (\vec{\theta}| \Omega, \vec{\lambda}) \given{\Omega}{\vec{\lambda}} d\vec{\theta} d\Omega
 \end{align}
 
-In the galaxy catalog method, the $\ppop (\vec{\theta}| \Omega, \vec{\lambda})$ is informed from
-the data. The inferred redshift distribution of galaxies in the catalog may be sensitive to
-$\Omega$. To capture the angular dependence in a computationally tractable way, one can separate
-the sky into $\npix$ equally-sized pixels $\Omega_i$.
+In the galaxy catalog method, $\ppop (\vec{\theta}| \Omega, \vec{\lambda})$ is informed from the
+data. The inferred redshift distribution of galaxies in the catalog may be sensitive to $\Omega$.
+To capture the angular dependence in a computationally tractable way, one can separate the sky into
+$\npix$ equally-sized pixels $\Omega_i$. Explicitly marginalizing over the redshift $\vec{\theta}
+	\to \{\vec{\theta}, z\}$:
+
+\begin{align}
+	\iint \given{\vec{d}, \hat{\Omega}}{\vec{\theta}, \Omega} \ppop (\vec{\theta}| \Omega, \vec{\lambda}) \given{\Omega}{\vec{\lambda}} d\vec{\theta} d\Omega
+	\to \\ \iiint \given{\vec{d}, \hat{\Omega}}{\vec{\theta}, z, \Omega} \ppop (\vec{\theta} | z, \Omega, \vec{\lambda}) \given{z}{\Omega, \vec{\lambda}} \given{\Omega}{\vec{\lambda}} d\vec{\theta} d\Omega dz
+\end{align}
 
 \subsection{A first approximation (TODO)}
 
-In this section, we reproduce the formalism developed in Ref.~\onlinecite{Gair_2023}. The authors
-make simplifying assumptions on $p_{det}$, $p_{pop}$ and $\given{\vec{d}}{\vec{\theta}}$:
+In this section, we reproduce the formalism developed in Ref.~\onlinecite{Gair_2023}. In that
+paper, the authors perform a mock data analysis of the dark siren approach using galaxy catalogues
+to demonstrate the capability of the method to recover an unbiased posterior for $H_0$. make
+simplifying assumptions on $p_{det}$, $p_{pop}$ and $\given{\vec{d}}{\vec{\theta}}$:
 
 \begin{itemize}
 	\item The
