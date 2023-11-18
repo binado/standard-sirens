@@ -177,7 +177,7 @@ supernovae~\cite{mukherjee2018classical}.
 
 Alternative methods have been explored in the literature where the inference was set up using GW
 data alone. One such method consists of using the prior knowledge of the star formation rate and
-time delay distribution of binary mergers for assessing the redshift probability
+time delay distribution of binary mergers for modelling the redshift probability
 distribution~\cite{Ding_2019, Ye_2021, Leandro_2022}.
 
 This manuscript is organized as follows. In Sec.~\ref{sec:framework}, we will go over the
@@ -347,12 +347,14 @@ $\npix$ equally-sized pixels $\Omega_i$. Explicitly marginalizing over the redsh
 \subsection{A first approximation (TODO)}
 
 In this section, we reproduce the formalism developed in Ref.~\onlinecite{Gair_2023}. In that
-paper, the authors perform a mock data analysis of the dark siren approach using galaxy catalogues
-to demonstrate the capability of the method to recover an unbiased posterior for $H_0$. make
-simplifying assumptions on $p_{det}$, $p_{pop}$ and $\given{\vec{d}}{\vec{\theta}}$:
+paper, the authors perform a mock data analysis of the dark siren approach using the galaxy catalog
+method to demonstrate its capability to recover an unbiased posterior for $H_0$. They make a series
+of simplifying assumptions on $p_{det}$, $p_{pop}$ and $\given{\vec{d}}{\vec{\theta}}$:
 
 \begin{itemize}
-	\item The
+	\item To account for selection effects, they neglect the effects of the (sky-dependent) GW detector
+	      sensitvity and detector-frame mass. Instead, detection is assumed to happen if the
+	      \textit{measured} luminosity distance is smaller than a thresold, $d_L^{\rm{th}}$.
 \end{itemize}
 
 \bibliography{refs}% Produces the bibliography via BibTeX.
