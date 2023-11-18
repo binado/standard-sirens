@@ -44,7 +44,7 @@ class DrawnGWInference(HierarchicalBayesianInference):
         fiducial_H0=70,
         z_draw_max=1.4,
         dl_th=1550,
-        max_redshift_err=0.0015,
+        max_redshift_err=0.015,
     ) -> None:
         self.sigma_constant = sigma_constant
         self.fiducial_cosmology = flat_cosmology(fiducial_H0)
@@ -70,11 +70,11 @@ class DrawnGWInference(HierarchicalBayesianInference):
 
     def redshift_likelihood(self, z, z_gal):
         """
-        Compute galaxy redshift likelihood p(z_gal_measured | z_gal_true)
+        Compute galaxy redshift likelihood p(z_gal | z)
 
         See Eq. (17)
         """
-        sigma = np.minimum(0.0013 * (1 + z) ** 3, self.max_redshift_err)
+        sigma = np.minimum(0.013 * (1 + z) ** 3, self.max_redshift_err)
         return gaussian(z, z_gal, sigma)
 
     def gw_likelihood(self, dl, true_dl):
