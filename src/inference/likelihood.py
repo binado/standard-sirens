@@ -1,7 +1,9 @@
 import numpy as np
 from scipy.special import erf
 from scipy.integrate import simpson
-from .utils import flat_cosmology, gaussian
+from .utils import flat_cosmology, gaussian, lognormal
+
+GW_LIKELIHOOD_DIST_OPTIONS = ("normal", "lognormal")
 
 
 def combine_posteriors(posterior_matrix, param_arr):
@@ -38,6 +40,7 @@ class DrawnGWInference(HierarchicalBayesianInference):
     def __init__(
         self,
         sigma_constant=0.1,
+        gw_likelihood_dist="normal",
         fiducial_H0=70,
         z_draw_max=1.4,
         dl_th=1550,
@@ -48,6 +51,11 @@ class DrawnGWInference(HierarchicalBayesianInference):
         self.dl_th = dl_th
         self.z_draw_max = z_draw_max
         self.max_redshift_err = max_redshift_err
+
+        if gw_likelihood_dist not in GW_LIKELIHOOD_DIST_OPTIONS:
+            raise ValueError('Parameter should either be "normal" or "lognormal".')
+
+        self.gw_likelihood_dist = gw_likelihood_dist
 
     @property
     def H0(self):
@@ -75,8 +83,10 @@ class DrawnGWInference(HierarchicalBayesianInference):
 
         See Eq. (21)
         """
-        sigma = self.sigma_constant * true_dl
-        return gaussian(dl, true_dl, sigma)
+        is_normal = self.gw_likelihood_dist == "normal"
+        sigma = self.sigma_constant * true_dl if is_normal else self.sigma_constant
+        dist = gaussian if is_normal else lognormal
+        return dist(dl, true_dl, sigma)
 
     def detection_probability(self, dl):
         """
