@@ -24,12 +24,12 @@ def combine_posteriors(posterior_matrix, param_arr):
     return combined_posterior, posterior_matrix
 
 
-class HierarchicalBayesianLikelihood:
+class HierarchicalBayesianInference:
     def __init__(self) -> None:
         pass
 
 
-class DrawnGWLikelihood(HierarchicalBayesianLikelihood):
+class DrawnGWInference(HierarchicalBayesianInference):
     """
     Base class with helper methods for implementing
     the likelihood model based on arxiv:2212.08694.
@@ -122,7 +122,7 @@ class DrawnGWLikelihood(HierarchicalBayesianLikelihood):
         return observed_gw_dls[observed_gw_dls < self.dl_th]
 
 
-class DrawnGWPerfectRedshiftLikelihood(DrawnGWLikelihood):
+class DrawnGWCatalogPerfectRedshiftInference(DrawnGWInference):
     """
     Implements likelihood model in the limit of perfect galaxy redshift measurements
 
