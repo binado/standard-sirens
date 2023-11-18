@@ -188,46 +188,46 @@ class DrawnGWCatalogPerfectRedshiftInference(DrawnGWInference):
         return combine_posteriors(likelihood_matrix, H0_array)
 
 
-class DrawnGWFullLikelihood(DrawnGWLikelihood):
+class DrawnGWCatalogFullInference(DrawnGWInference):
     """
     Implements full likelihood model
 
     See Eq. (29)
     """
 
-    def p_cbc(self, z, z_gal, normalize=False):
+    def p_cbc(self, z, z_gal):
         """
         Return \Sum_i p(z_gal_i | z) p_bg (z) p_rate (z)
 
         See Eqs. (16), (29)
         """
-        p_rate = 1 / (1 + z)  # See Eq. (5)
+        p_rate = 1.0  # / (1.0 + z)  # See Eq. (5)
+        # Use fiducial H0, as dependence cancels out in normalization
         p_bg = self.fiducial_cosmology.differential_comoving_volume(z).value
+
         # Create n_z x n_z_gal redshift likelihood matrix
         z_gal_by_z_likelihood = np.array(
             [self.redshift_likelihood(z, z_gal_i) for z_gal_i in z_gal]
         )
 
         # Sum likelihood * prior on z for over galaxies
-        p_cbc = np.sum(z_gal_by_z_likelihood * p_bg * p_rate, axis=0)
-        if normalize:
-            p_cbc /= simpson(p_cbc, z)
-
-        return p_cbc
+        p_cbc = np.sum(z_gal_by_z_likelihood, axis=0) * p_bg * p_rate
+        return p_cbc / simpson(p_cbc, z)
 
     def gw_likelihood_array(self, dl, H0_array, z, z_gal):
         """
         Return the sum over galaxies of p(d_L | d_L(H0, z_gal)) for each H0
         """
-        p_rate = self.p_cbc(z, z_gal, normalize=True)
+        p_rate = self.p_cbc(z, z_gal)
         dl_by_H0_by_z_matrix = self.dl_from_H0_array_and_z(H0_array, z)
-        return np.dot(self.gw_likelihood(dl, dl_by_H0_by_z_matrix), p_rate)
+        integrand = self.gw_likelihood(dl, dl_by_H0_by_z_matrix) * p_rate
+        return simpson(integrand, z)
 
     def selection_effects(self, H0_array, z, z_gal):
         """
         Return an array with GW likelihood selection effects for each H0 in the array
         """
-        p_rate = self.p_cbc(z, z_gal, normalize=True)
+        p_rate = self.p_cbc(z, z_gal)
         dl_by_H0_by_z_matrix = self.dl_from_H0_array_and_z(H0_array, z)
         detection_prob = self.detection_probability(dl_by_H0_by_z_matrix)
         return simpson(detection_prob * p_rate, z)
