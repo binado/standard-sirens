@@ -34,7 +34,7 @@ class HierarchicalBayesianInference:
 class DrawnGWInference(HierarchicalBayesianInference):
     """
     Base class with helper methods for implementing
-    the likelihood model based on arxiv:2212.08694.
+    the likelihood models based on arxiv:2212.08694 and arxiv:2103.14038.
     """
 
     def __init__(
@@ -262,4 +262,57 @@ class DrawnGWFullLikelihood(DrawnGWLikelihood):
                     / selection_effects
                 )
 
+        return combine_posteriors(likelihood_matrix, H0_array)
+
+
+class DrawnGWMergerRatePriorInference(DrawnGWInference):
+    """
+    Class implementing likelihood model using prior knowledge on the
+    star formation rate.
+
+    See arxiv:2103.14038
+    """
+
+    def p_cbc(self, z):
+        """
+        Return the probability of a CBC at z, p_pop(z | H_0)
+
+        Uses Madau-Dickinson SFR (arxiv:1403.0007)
+        """
+        # H0 dependence will cancel out in normalization
+        dvc_dz = self.fiducial_cosmology.differential_comoving_volume(z).value
+        sfr = np.power(1 + z, 2.7) / (1.0 + np.power((1 + z) / 2.9, 5.6))
+        # 1 + z factor in denominator accounts for the transformation from
+        # detector frame time to source frame time
+        p_cbc = dvc_dz * sfr / (1 + z)
+        return p_cbc / simpson(p_cbc, z)
+
+    def gw_likelihood_array(self, dl, H0_array, z):
+        """
+        Return the sum over galaxies of p(d_L | d_L(H0, z)) for each H0
+        """
+        p_rate = self.p_cbc(z)
+        dl_by_H0_by_z_matrix = self.dl_from_H0_array_and_z(H0_array, z)
+        integrand = self.gw_likelihood(dl, dl_by_H0_by_z_matrix) * p_rate
+        return simpson(integrand, z)
+
+    def selection_effects(self, H0_array, z):
+        """
+        Return an array with GW likelihood selection effects for each H0 in the array
+        """
+        p_rate = self.p_cbc(z)
+        dl_by_H0_by_z_matrix = self.dl_from_H0_array_and_z(H0_array, z)
+        detection_prob = self.detection_probability(dl_by_H0_by_z_matrix)
+        return simpson(detection_prob * p_rate, z)
+
+    def likelihood(self, gw_dl_array, H0_array, z):
+        gw_dl_flatenned_array = np.concatenate(gw_dl_array)
+        likelihood_matrix = np.array(
+            [
+                self.gw_likelihood_array(gw_dl, H0_array, z)
+                for gw_dl in gw_dl_flatenned_array
+            ]
+        )
+        selection_effects = self.selection_effects(H0_array, z)
+        likelihood_matrix /= selection_effects
         return combine_posteriors(likelihood_matrix, H0_array)
