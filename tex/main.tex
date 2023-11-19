@@ -246,6 +246,7 @@ sets, $\mathcal{D}_<$ and $\mathcal{D}_\geq$, according to whether $\rho_\mathca
 than a threshold $\rho_{\text{tr}}$ or not. Then
 
 \begin{equation}
+	\label{eq:stat:detection-prob}
 	\pdet(\vec{\theta}) = \int_{\mathcal{D}_\geq} \given{\vec{d}}{\vec{\theta}}d\vec{d}
 \end{equation}
 
@@ -324,38 +325,54 @@ the CBC merger rate evolves with redshift. Finally, the cosmological parameters 
 which appear in Eq.~\eqref{eq:intro:distance-redshift-relation}, namely $\{H_0, \Omega_m,
 	\Omega_{de}, w\}$.
 
-The angular dependence on $\Omega=\{\text{ra}, \text{dec} \}$ can be made manifest by relabeling
-$\vec{\theta} \to \{\vec{\theta}, \Omega\}$, $\vec{d} \to \{\vec{d}, \hat{\Omega}\}$:
-
-\begin{align}
-	\label{eq:stat:explicit-marginalized-omega}
-	\int \given{\vec{d}}{\vec{\theta}}\ppop (\vec{\theta}| \vec{\lambda})d\vec{\theta}
-	\to \iint \given{\vec{d}, \hat{\Omega}}{\vec{\theta}, \Omega} \ppop (\vec{\theta}| \Omega, \vec{\lambda}) \given{\Omega}{\vec{\lambda}} d\vec{\theta} d\Omega
-\end{align}
-
-In the galaxy catalog method, $\ppop (\vec{\theta}| \Omega, \vec{\lambda})$ is informed from the
-data. The inferred redshift distribution of galaxies in the catalog may be sensitive to $\Omega$.
-To capture the angular dependence in a computationally tractable way, one can separate the sky into
-$\npix$ equally-sized pixels $\Omega_i$. Explicitly marginalizing over the redshift $\vec{\theta}
-	\to \{\vec{\theta}, z\}$:
-
-\begin{align}
-	\iint \given{\vec{d}, \hat{\Omega}}{\vec{\theta}, \Omega} \ppop (\vec{\theta}| \Omega, \vec{\lambda}) \given{\Omega}{\vec{\lambda}} d\vec{\theta} d\Omega
-	\to \\ \iiint \given{\vec{d}, \hat{\Omega}}{\vec{\theta}, z, \Omega} \ppop (\vec{\theta} | z, \Omega, \vec{\lambda}) \given{z}{\Omega, \vec{\lambda}} \given{\Omega}{\vec{\lambda}} d\vec{\theta} d\Omega dz
-\end{align}
-
-\subsection{A first approximation (TODO)}
+\subsection{A simplified approach}
 
 In this section, we reproduce the formalism developed in Ref.~\onlinecite{Gair_2023}. In that
 paper, the authors perform a mock data analysis of the dark siren approach using the galaxy catalog
-method to demonstrate its capability to recover an unbiased posterior for $H_0$. They make a series
-of simplifying assumptions on $p_{det}$, $p_{pop}$ and $\given{\vec{d}}{\vec{\theta}}$:
+method to demonstrate its capability to recover an unbiased posterior for $H_0$. They consider that
+the remaining cosmological parameters, such as $\Omega_m$ and $w_\text{DE}$, are fixed to fiducial
+values. They make a series of simplifying assumptions on $p_{det}$, $p_{pop}$ and
+$\given{\vec{d}}{\vec{\theta}}$, which we discuss below.
 
-\begin{itemize}
-	\item To account for selection effects, they neglect the effects of the (sky-dependent) GW detector
-	      sensitvity and detector-frame mass. Instead, detection is assumed to happen if the
-	      \textit{measured} luminosity distance is smaller than a thresold, $d_L^{\rm{th}}$.
-\end{itemize}
+To account for selection effects, they neglect the effects of the (sky-dependent) GW detector
+sensitvity and detector-frame mass. Instead, detection is assumed to happen if the
+\textit{measured} luminosity distance is smaller than a threshold, $d_L^{\rm{th}}$. If the GW
+likelihood is taken to be gaussian, that is,
+
+\begin{equation}
+	\mathcal{L}(\hat{d}_L^i | d_L(z, H_0))
+	= \frac{1}{\sqrt{2 \pi} \sigma_{d_L}} \exp{\left [-\frac{1}{2} \left (\frac{\hat{d}_L^i - d_L(z, H_0)}{\sigma_{d_L}} \right )^2 \right ]},
+\end{equation}
+then the detection probability can be expressed analytically with Eq.~\eqref{eq:stat:detection-prob}:
+
+\begin{align}
+	\nonumber
+	\pdet(z, H_0) & = \int_{-\infty}^{d_L^{\rm{th}}} \mathcal{L}(\hat{d}_L^i | d_L(z, H_0)) d \hat{d}_L^i                                   \\
+	              & = \frac{1}{2} \left [ 1 + \text{erf} \left (\frac{\hat{d}_L^i - d_L(z, H_0)}{ \sqrt{2} \sigma_{d_L}}  \right ) \right ]
+\end{align}
+where erf is the unilateral error function of the standard normal distribution. The uncertainty $\sigma_{d_L}$ is taken to be a constant fraction of $d_L$, such that
+$\sigma_{d_L} / d_L = C < 1$.
+
+The galaxy catalog information is used to compute the probability $\ppop(\vec{\theta} |
+	\vec{\lambda}) = \ppop(z | H_0)$. Each galaxy in the catalog contributes with a term
+
+\begin{equation}
+	\mathcal{L}_\text{EM}(\hat{z}_i | z_i)p(z_i | H_0),
+\end{equation}
+where $z_i$ and $\hat{z}_i$ are the galaxy's true and measured values, respectively. The likelihood encodes the measurement uncertainty, while the redshift prior
+depends on our knowledge of the galaxy distribution on redshift. A simple choice is to pick $p(z_i | H_0)$ to be uniform in a comoving volume, $p(z_i | H_0) \propto dV_c /dz$. The posterior on $H_0$ becomes
+\begin{equation}
+	\given{H_0}{d_\text{EM}, d_\text{GW}} \propto
+	\alpha^{-1}(H_0) \left [ \sum_{i=1}^{N_\text{gal}} \mathcal{L}_\text{GW}(d_\text{GW} | d_L(z_i, H_0)) \right ]
+	\prod_{j=1}^{N_\text{gal}} \mathcal{L}_\text{EM}(\hat{z}_j | z_j)p(z_j | H_0)
+\end{equation}
+On the approximation that the galaxy redshifts are measured perfectly, the likelihood $\mathcal{L}_\text{EM}$ becomes a delta function,
+and the posterior for a single GW event reduces to a simple form:
+\begin{equation}
+	\label{eq:stat:perfect-redshift-posterior}
+	\given{H_0}{d_\text{EM}, d_\text{GW}} \propto
+	\frac{\sum_{i=1}^{N_\text{gal}} \mathcal{L}_\text{GW}(d_\text{GW} | d_L(\hat{z}_i, H_0))}{\sum_{i=1}^{N_\text{gal}} \pdet(\hat{z}_i, H_0)}
+\end{equation}
 
 \bibliography{refs}% Produces the bibliography via BibTeX.
 
