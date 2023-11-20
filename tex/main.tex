@@ -141,7 +141,7 @@ kilonova can typically be pinpointed to a specific galaxy, thereby identifying t
 the GW merger. The GW signal provides the distance to the host galaxy, while its electromagnetic
 spectrum provides the redshift. These sources are typically referred to as bright sirens. So far,
 the only confirmed such event has been the binary neutron star detection GW170817, which occurred
-so exceptionally close to our galaxy - at $d \sim 40$Mpc - that a direct, model-independent
+so exceptionally close to our galaxy - at $d \sim 40 \,$Mpc - that a direct, model-independent
 estimation of $H_0$ with Hubble's law,
 
 \begin{equation}
@@ -160,7 +160,12 @@ volume is reflected in the $H_0$ posterior it produces. How informative the indi
 will depend strongly on their localisation volumes. By combining the contributions of many events,
 the true value of $H_0$ will be measured as other values will statistically average out. Such
 analyses have been carried out in the literature,
-see~\cite{DelPozzo:2011vcw,Chen:2017rfc,LIGOScientific:2018gmd,Gray:2019ksv,DES:2019ccw,DES:2020nay}.
+see~\cite{DelPozzo:2011vcw,Chen:2017rfc,LIGOScientific:2018gmd,Gray:2019ksv,DES:2019ccw}. As an
+example, Ref.~\onlinecite{DES:2020nay} applied the galaxy catalog method with the two best
+localized dark sirens, GW170814 and GW190814, and the photo-$z$ catalog from the Dark Energy Survey
+(DES)~\cite{thedarkenergysurveycollaboration2005dark}. A joint analysis with the bright siren event
+GW170817 provided an $\sim 18\%$ improvement on the 68\% confidence interval compared to inferring
+$H_0$ with GW170817 alone.
 
 At higher redshifts, galaxy-wide surveys are incomplete, and the probability that the catalog
 contains the merger's host galaxy decreases. On the other hand, both the the gravitational wave
@@ -347,8 +352,8 @@ then the detection probability can be expressed analytically with Eq.~\eqref{eq:
 
 \begin{align}
 	\nonumber
-	\pdet(z, H_0) & = \int_{-\infty}^{d_L^{\rm{th}}} \mathcal{L}(\hat{d}_L^i | d_L(z, H_0)) d \hat{d}_L^i                                   \\
-	              & = \frac{1}{2} \left [ 1 + \text{erf} \left (\frac{\hat{d}_L^i - d_L(z, H_0)}{ \sqrt{2} \sigma_{d_L}}  \right ) \right ]
+	\pdet(z, H_0) & = \int_{-\infty}^{d_L^{\rm{th}}} \mathcal{L}(\hat{d}_L^i | d_L(z, H_0)) d \hat{d}_L^i                                    \\
+	              & = \frac{1}{2} \left [ 1 + \text{erf} \left (\frac{\hat{d}_L^i - d_L(z, H_0)}{ \sqrt{2} \sigma_{d_L}}  \right ) \right ].
 \end{align}
 where erf is the unilateral error function of the standard normal distribution. The uncertainty $\sigma_{d_L}$ is taken to be a constant fraction of $d_L$, such that
 $\sigma_{d_L} / d_L = C < 1$.
@@ -364,15 +369,28 @@ depends on our knowledge of the galaxy distribution on redshift. A simple choice
 \begin{equation}
 	\given{H_0}{d_\text{EM}, d_\text{GW}} \propto
 	\alpha^{-1}(H_0) \left [ \sum_{i=1}^{N_\text{gal}} \mathcal{L}_\text{GW}(d_\text{GW} | d_L(z_i, H_0)) \right ]
-	\prod_{j=1}^{N_\text{gal}} \mathcal{L}_\text{EM}(\hat{z}_j | z_j)p(z_j | H_0)
+	\prod_{j=1}^{N_\text{gal}} \mathcal{L}_\text{EM}(\hat{z}_j | z_j)p(z_j | H_0).
 \end{equation}
-On the approximation that the galaxy redshifts are measured perfectly, the likelihood $\mathcal{L}_\text{EM}$ becomes a delta function,
-and the posterior for a single GW event reduces to a simple form:
+
+Note that we are implicitly neglecting cross-correlations between galaxies, for instance due to
+clustering. On the approximation that the galaxy redshifts are measured perfectly, the likelihood
+$\mathcal{L}_\text{EM}$ becomes a delta function, and the posterior for a single GW event reduces
+to a simple form:
+
 \begin{equation}
 	\label{eq:stat:perfect-redshift-posterior}
 	\given{H_0}{d_\text{EM}, d_\text{GW}} \propto
-	\frac{\sum_{i=1}^{N_\text{gal}} \mathcal{L}_\text{GW}(d_\text{GW} | d_L(\hat{z}_i, H_0))}{\sum_{i=1}^{N_\text{gal}} \pdet(\hat{z}_i, H_0)}
+	\frac{\sum_{i=1}^{N_\text{gal}} \mathcal{L}_\text{GW}(d^\text{GW}_L | d_L(\hat{z}_i, H_0))}{\sum_{i=1}^{N_\text{gal}} \pdet(\hat{z}_i, H_0)}.
 \end{equation}
+
+Alternatively, we model the photo-$z$ redshift likelihood as a gaussian,
+
+\begin{equation}
+	\mathcal{L}_\text{EM}(\hat{z}_j | z_j) = \frac{1}{\sqrt{2 \pi} \sigma_z} \exp{\left [-\frac{1}{2} \left (\frac{\hat{z}_i - z_i}{\sigma_z} \right )^2 \right ]},
+\end{equation}
+
+with $\sigma_z \sim \rm{min}\{0.013(1+z)^3, 0.015\}$, following an empirical fit described in
+Ref.~\onlinecite{DES:2019ccw}.
 
 \bibliography{refs}% Produces the bibliography via BibTeX.
 
