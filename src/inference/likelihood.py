@@ -217,24 +217,31 @@ class DrawnGWCatalogFullInference(DrawnGWInference):
             [self.redshift_likelihood(z, z_gal_i) for z_gal_i in z_gal]
         )
 
+        # This is an n_gal x n_z matrix
+        p_cbc = z_gal_by_z_likelihood * p_bg * p_rate
+
+        # Normalize each z_gal entry
+        norm = simpson(p_cbc, z)
+        # Discard zero norm galaxies: this happens because their redshifts falls outside [0, z_max] @ high sigma
+        galaxies_in_range = np.nonzero(norm > 1e-6)
+        p_cbc = p_cbc[galaxies_in_range] / norm[galaxies_in_range].reshape(-1, 1)
+
         # Sum likelihood * prior on z for over galaxies
-        p_cbc = np.sum(z_gal_by_z_likelihood, axis=0) * p_bg * p_rate
+        p_cbc = np.sum(p_cbc, axis=0)
         return p_cbc / simpson(p_cbc, z)
 
-    def gw_likelihood_array(self, dl, H0_array, z, z_gal):
+    def gw_likelihood_array(self, dl, H0_array, z, p_rate):
         """
         Return the sum over galaxies of p(d_L | d_L(H0, z_gal)) for each H0
         """
-        p_rate = self.p_cbc(z, z_gal)
         dl_by_H0_by_z_matrix = self.dl_from_H0_array_and_z(H0_array, z)
         integrand = self.gw_likelihood(dl, dl_by_H0_by_z_matrix) * p_rate
         return simpson(integrand, z)
 
-    def selection_effects(self, H0_array, z, z_gal):
+    def selection_effects(self, H0_array, z, p_rate):
         """
         Return an array with GW likelihood selection effects for each H0 in the array
         """
-        p_rate = self.p_cbc(z, z_gal)
         dl_by_H0_by_z_matrix = self.dl_from_H0_array_and_z(H0_array, z)
         detection_prob = self.detection_probability(dl_by_H0_by_z_matrix)
         return simpson(detection_prob * p_rate, z)
@@ -251,21 +258,23 @@ class DrawnGWCatalogFullInference(DrawnGWInference):
             assert len(z_gal) == n_dir
             # Loop through directions
             for i, (gws_in_dir_i, z_gal_i) in enumerate(zip(gw_dl_array, z_gal)):
-                selection_effects = self.selection_effects(H0_array, z, z_gal_i)
+                p_rate = self.p_cbc(z, z_gal_i)
+                selection_effects = self.selection_effects(H0_array, z, p_rate)
                 # Loop through GWs for a fixed direction
                 for gw_dl_j in gws_in_dir_i:
                     likelihood_matrix[current_gw_idx, :] = (
-                        self.gw_likelihood_array(gw_dl_j, H0_array, z, z_gal_i)
+                        self.gw_likelihood_array(gw_dl_j, H0_array, z, p_rate)
                         / selection_effects
                     )
                     current_gw_idx += 1
             assert current_gw_idx == n_gw
         # GWs share the same set of host galaxies
         else:
-            selection_effects = self.selection_effects(H0_array, z, z_gal)
+            p_rate = self.p_cbc(z, z_gal)
+            selection_effects = self.selection_effects(H0_array, z, p_rate)
             for i, gw_dl in enumerate(gw_dl_array):
                 likelihood_matrix[i, :] = (
-                    self.gw_likelihood_array(gw_dl, H0_array, z, z_gal)
+                    self.gw_likelihood_array(gw_dl, H0_array, z, p_rate)
                     / selection_effects
                 )
 
