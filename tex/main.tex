@@ -165,7 +165,8 @@ example, Ref.~\onlinecite{DES:2020nay} applied the galaxy catalog method with th
 localized dark sirens, GW170814 and GW190814, and the photo-$z$ catalog from the Dark Energy Survey
 (DES)~\cite{thedarkenergysurveycollaboration2005dark}. A joint analysis with the bright siren event
 GW170817 provided an $\sim 18\%$ improvement on the 68\% confidence interval compared to inferring
-$H_0$ with GW170817 alone.
+$H_0$ with GW170817 alone. Another study used 8 well-localised dark sirens alone to infer $H_0 =
+	79.8^{+19.1}_{-12.8}$~\cite{Palmese_2023}.
 
 At higher redshifts, galaxy-wide surveys are incomplete, and the probability that the catalog
 contains the merger's host galaxy decreases. On the other hand, both the the gravitational wave
@@ -182,8 +183,17 @@ supernovae~\cite{mukherjee2018classical}.
 
 Alternative methods have been explored in the literature where the inference was set up using GW
 data alone. One such method consists of using the prior knowledge of the star formation rate and
-time delay distribution of binary mergers for modelling the redshift probability
-distribution~\cite{Ding_2019, Ye_2021, Leandro_2022}.
+time delay distribution of binary mergers for modelling the prior on the merger population
+distribution~\cite{Ding_2019, Ye_2021, Leandro_2022}. In order to avoid biases by using a fixed
+merger distribution, it is important to jointly fit its hyperparameters with the GW data.
+
+The different methods presented above are not at all independent. Galaxy catalogs, for instance,
+are most effective with well-localised, low-redshift events. Such events need to be marginalized
+over a smaller number of galaxies than those that encompass large volumes so that they are more
+likely to provide better constraints. Better localized events also tend to be less distant, which
+means that a standard siren analysis would mostly be sensitive to the Hubble constant rather than
+to other cosmological parameters. At higher redshifts, the catalogs become increasingly
+uninformative due to their incompleteness.
 
 This manuscript is organized as follows. In Sec.~\ref{sec:framework}, we will go over the
 statistical formalism for data analysis with standard sirens, and we will specialize in the galaxy
@@ -358,7 +368,7 @@ then the detection probability can be expressed analytically with Eq.~\eqref{eq:
 where erf is the unilateral error function of the standard normal distribution. The uncertainty $\sigma_{d_L}$ is taken to be a constant fraction of $d_L$, such that
 $\sigma_{d_L} / d_L = C < 1$.
 
-The galaxy catalog information is used to compute the probability $\ppop(\vec{\theta} |
+The galaxy catalog information is used to compute the population model prior $\ppop(\vec{\theta} |
 	\vec{\lambda}) = \ppop(z | H_0)$. Each galaxy in the catalog contributes with a term
 
 \begin{equation}
@@ -372,10 +382,10 @@ depends on our knowledge of the galaxy distribution on redshift. A simple choice
 	\prod_{j=1}^{N_\text{gal}} \mathcal{L}_\text{EM}(\hat{z}_j | z_j)p(z_j | H_0).
 \end{equation}
 
-Note that we are implicitly neglecting cross-correlations between galaxies, for instance due to
-clustering. On the approximation that the galaxy redshifts are measured perfectly, the likelihood
-$\mathcal{L}_\text{EM}$ becomes a delta function, and the posterior for a single GW event reduces
-to a simple form:
+Note that in the above expression we are implicitly neglecting cross-correlations between galaxies,
+for instance due to clustering. On the approximation that the galaxy redshifts are measured
+perfectly, the likelihood $\mathcal{L}_\text{EM}$ becomes a delta function, and the posterior for a
+single GW event reduces to a simple form:
 
 \begin{equation}
 	\label{eq:stat:perfect-redshift-posterior}
