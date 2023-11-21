@@ -68,14 +68,21 @@ class DrawnGWInference(HierarchicalBayesianInference):
         """
         return self.fiducial_cosmology.luminosity_distance(z).to("Mpc").value
 
+    def redshift_sigma(self, z):
+        return np.minimum(0.013 * (1 + z) ** 3, self.max_redshift_err)
+
     def redshift_likelihood(self, z, z_gal):
         """
         Compute galaxy redshift likelihood p(z_gal | z)
 
         See Eq. (17)
         """
-        sigma = np.minimum(0.013 * (1 + z) ** 3, self.max_redshift_err)
-        return gaussian(z, z_gal, sigma)
+        return gaussian(z, z_gal, self.redshift_sigma(z))
+
+    def draw_from_redshift_likelihood(self, z_true):
+        return z_true + self.redshift_sigma(z_true) * np.random.standard_normal(
+            len(z_true)
+        )
 
     def gw_likelihood(self, dl, true_dl):
         """
