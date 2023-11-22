@@ -146,23 +146,6 @@ class DrawnGWCatalogPerfectRedshiftInference(DrawnGWInference):
     See Eq. (15)
     """
 
-    def gw_likelihood_array(self, dl, H0_array, z_gal):
-        """
-        Return the sum over galaxies of p(d_L | d_L(H0, z_gal)) for each H0
-        """
-        p_rate = self.uniform_p_rate(z_gal)
-        dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z(H0_array, z_gal)
-        return np.dot(self.gw_likelihood(dl, dl_by_H0_by_gal_matrix), p_rate)
-
-    def selection_effects(self, H0_array, z_gal):
-        """
-        Return an array with GW likelihood selection effects for each H0 in the array
-        """
-        p_rate = self.uniform_p_rate(z_gal)
-        dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z(H0_array, z_gal)
-        detection_prob = self.detection_probability(dl_by_H0_by_gal_matrix)
-        return np.dot(detection_prob, p_rate)
-
     def likelihood(self, gw_dl_array, H0_array, z_gal, n_dir=1):
         n_H0 = H0_array.shape[0]
         n_gw = np.sum([len(gw_dl) for gw_dl in gw_dl_array])
@@ -170,27 +153,29 @@ class DrawnGWCatalogPerfectRedshiftInference(DrawnGWInference):
         likelihood_matrix = np.ones((n_gw, n_H0))
 
         # Each direction has a different set of candidate galaxies
-        if n_dir > 1:
-            assert len(z_gal) == len(gw_dl_array)
-            assert len(z_gal) == n_dir
-            # Loop through directions
-            for i, (gws_in_dir_i, z_gal_i) in enumerate(zip(gw_dl_array, z_gal)):
-                selection_effects = self.selection_effects(H0_array, z_gal_i)
-                # Loop through GWs for a fixed direction
-                for gw_dl_j in gws_in_dir_i:
-                    likelihood_matrix[current_gw_idx, :] = (
-                        self.gw_likelihood_array(gw_dl_j, H0_array, z_gal_i)
-                        / selection_effects
-                    )
-                    current_gw_idx += 1
-            assert current_gw_idx == n_gw
-        # GWs share the same set of host galaxies
-        else:
-            selection_effects = self.selection_effects(H0_array, z_gal)
-            for i, gw_dl in enumerate(gw_dl_array):
-                likelihood_matrix[i, :] = (
-                    self.gw_likelihood_array(gw_dl, H0_array, z_gal) / selection_effects
+        # If n_dir = 1, put single direction in list to iterate over
+        # as a general case
+        gw_dl_array = gw_dl_array if n_dir > 1 else [gw_dl_array]
+        z_gal = z_gal if n_dir > 1 else [z_gal]
+
+        assert len(z_gal) == len(gw_dl_array)
+        assert len(z_gal) == n_dir
+        # Loop through directions
+        for gws_in_dir_i, z_gal_i in zip(gw_dl_array, z_gal):
+            p_rate = self.uniform_p_rate(z_gal_i)
+            dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z(H0_array, z_gal_i)
+            selection_effects = np.dot(
+                self.detection_probability(dl_by_H0_by_gal_matrix), p_rate
+            )
+            # Loop through GWs for a fixed direction
+            for gw_dl_j in gws_in_dir_i:
+                # sum over galaxies of p(d_L | d_L(H0, z_gal)) for each H0
+                numerator = np.dot(
+                    self.gw_likelihood(gw_dl_j, dl_by_H0_by_gal_matrix), p_rate
                 )
+                likelihood_matrix[current_gw_idx, :] = numerator / selection_effects
+                current_gw_idx += 1
+        assert current_gw_idx == n_gw
 
         return combine_posteriors(likelihood_matrix, H0_array)
 
