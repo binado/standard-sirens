@@ -193,7 +193,7 @@ class DrawnGWCatalogFullInference(DrawnGWInference):
 
         See Eqs. (16), (29)
         """
-        p_rate = 1.0  # / (1.0 + z)  # See Eq. (5)
+        p_rate = 1.0 / (1.0 + z)  # See Eq. (5)
         # Use fiducial H0, as dependence cancels out in normalization
         p_bg = self.fiducial_cosmology.differential_comoving_volume(z).value
 
