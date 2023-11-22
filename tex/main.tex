@@ -218,14 +218,14 @@ catalog method.
 
 \section{\label{sec:framework}Statistical framework}
 
-In gravitational-wave astronomy, one subject of interest is extracting the distributional
-properties of a population of sources based on a set of observations which are drawn from that
-distribution. Any methodology that leads to unbiased estimates of the population parameters must
-simultaneously account for measurement uncertainties and selection effects. One way with which the
-latter affects the observed population is a Mamquist bias: the loudest or brightest sources are
-more likely to be detected. The standard formalism for extracting the true source population
-parameters by incorporating these biases in the analysis is frequently labeled as Hierarchical
-Bayesian inference, see~\cite{Loredo:2004nn,Mandel:2018mve,Vitale_2021}.
+In gravitational-wave astronomy, one line of interest is extracting the distributional properties
+of a population of sources based on a set of observations which are drawn from that distribution.
+Any methodology that leads to unbiased estimates of the population parameters must simultaneously
+account for measurement uncertainties and selection effects. One way with which the latter affects
+the observed population is a Mamquist bias: the loudest or brightest sources are more likely to be
+detected. The standard formalism for extracting the true source population parameters by
+incorporating these biases in the analysis is frequently labeled as Hierarchical Bayesian
+inference, see~\cite{Loredo:2004nn,Mandel:2018mve,Vitale_2021}.
 
 In the discussion below, we will follow the framework outlined in Ref.~\onlinecite{Gair_2023},
 which is a pedagogical resource on the galaxy catalog approach.
@@ -333,7 +333,9 @@ where the last two equalities are derived from Eq.~\eqref{eq:stat:ppop} and
 Eq.~\eqref{eq:stat:nalpha} respectively. The full posterior with the population rate is then
 
 \begin{align}
+	\nonumber
 	\given{\vec{\Lambda}, N }{\vec{d}} & = \given{N}{\vec{\Lambda}, \vec{d}}\given{\vec{\Lambda}}{\vec{d}}                    \\
+	\label{eq:stat:full-hierarchical-posterior}
 	                                   & = e^{-\ndet}(\ndet)^{\nobs} \pi(N) \pi(\vec{\Lambda}) \alpha(\vec{\Lambda})^{-\nobs}
 	\prod_{i=1}^{\nobs} \int \given{\vec{d_i}}{\vec{\theta}} \ppop(\vec{\theta} | \vec{\Lambda} ) d\vec{\theta}
 \end{align}
@@ -366,10 +368,18 @@ the remaining cosmological parameters, such as $\Omega_m$ and $w_\text{DE}$, are
 values. They make a series of simplifying assumptions on $p_{det}$, $p_{pop}$ and
 $\given{\vec{d}}{\vec{\theta}}$, which we discuss below.
 
-To account for selection effects, they neglect the effects of the (sky-dependent) GW detector
-sensitvity and detector-frame mass. Instead, detection is assumed to happen if the
-\textit{measured} luminosity distance is smaller than a threshold, $d_L^{\rm{th}}$. If the GW
-likelihood is taken to be gaussian, that is,
+The selection effects, encoded in the $\alpha (\Lambda )$ term from Eq.~\eqref{eq:stat:nalpha}, not
+only depend on the underlying population modelling prior $\ppop$, but they are also affected by the
+(sky-dependent) GW detector sensitivity and detector-frame mass. A complete analytical treatment is
+thus intractable. Hence, the detection efficiency must be estimated by drawing synthetic objects
+from a fiducial distribution, $p_\text{draw}(\theta)$, drawing corresponding data from the
+likelihood function $\given{\vec{d}}{\vec{\theta}}$, and “injecting” these data into the pipeline
+used to produce the GW event catalog, recording which observations are detected. The number of
+required injections to estimate the selection function precisely enough scales linearly with the
+size of the event catalog~\cite{essick2022precision}.
+
+Instead, detection is assumed to happen if the \textit{measured} luminosity distance is smaller
+than a threshold, $d_L^{\rm{th}}$. If the GW likelihood is taken to be gaussian, that is,
 
 \begin{equation}
 	\mathcal{L}(\hat{d}_L^i | d_L(z, H_0))
@@ -413,7 +423,7 @@ single GW event reduces to a simple form:
 Alternatively, we model the photo-$z$ redshift likelihood as a gaussian,
 
 \begin{equation}
-	\mathcal{L}_\text{EM}(\hat{z}_j | z_j) = \frac{1}{\sqrt{2 \pi} \sigma_z} \exp{\left [-\frac{1}{2} \left (\frac{\hat{z}_i - z_i}{\sigma_z} \right )^2 \right ]},
+	\mathcal{L}_\text{EM}(\hat{z}_j | z_j) = \frac{1}{\sqrt{2 \pi} \sigma_z} \exp{\left [-\frac{1}{2} \left (\frac{\hat{z}_j - z_j}{\sigma_z} \right )^2 \right ]},
 \end{equation}
 
 with $\sigma_z \sim \rm{min}\{0.013(1+z)^3, 0.015\}$, following an empirical fit described in
