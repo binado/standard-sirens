@@ -146,6 +146,15 @@ class DrawnGWCatalogPerfectRedshiftInference(DrawnGWInference):
     See Eq. (15)
     """
 
+    def selection_effects(self, H0_array, z_gal):
+        """
+        Return an array with GW likelihood selection effects for each H0 in the array
+        """
+        p_rate = self.uniform_p_rate(z_gal)
+        dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z(H0_array, z_gal)
+        detection_prob = self.detection_probability(dl_by_H0_by_gal_matrix)
+        return np.dot(detection_prob, p_rate)
+
     def likelihood(self, gw_dl_array, H0_array, z_gal, n_dir=1):
         n_H0 = H0_array.shape[0]
         n_gw = np.sum([len(gw_dl) for gw_dl in gw_dl_array])
