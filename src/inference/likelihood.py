@@ -121,7 +121,7 @@ class DrawnGWInference(HierarchicalBayesianInference):
         p_rate[z_gal <= self.z_draw_max] = 1
         return p_rate / np.sum(p_rate)
 
-    def draw_gw_events(self, z_gal, n_gw):
+    def draw_gw_events(self, z_gal, n_gw, sigma_constant):
         # Uniform merger probability on 0 < z < z_draw_max
         p_rate = self.uniform_p_rate(z_gal)
 
@@ -133,7 +133,7 @@ class DrawnGWInference(HierarchicalBayesianInference):
 
         # Convert true gw luminosity distances into measured values
         # drawn from a normal distribution consistent with the GW likelihood
-        sigma_dl = drawn_gw_dls * self.sigma_constant
+        sigma_dl = drawn_gw_dls * sigma_constant
         observed_gw_dls = np.random.standard_normal(n_gw) * sigma_dl + drawn_gw_dls
         # Filter events whose dL exceeds threshold
         return observed_gw_dls[observed_gw_dls < self.dl_th]
