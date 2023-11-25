@@ -18,22 +18,6 @@ class GalaxyCatalog:
     def close(self):
         self.file.close()
 
-    # @property
-    # def ra(self):
-    #     return self.file.get("ra")[...]
-
-    # @property
-    # def dec(self):
-    #     return self.file.get("dec")[...]
-
-    # @property
-    # def z(self):
-    #     return self.file.get("z")[...]
-
-    # @property
-    # def skymap_indices(self):
-    #     return self.file.get("skymap_indices")[...]
-
     def galaxy_counts(self, skymap_indices_dataset="skymap"):
         """
         Return an array with the number of galaxies within each pixel
@@ -61,3 +45,31 @@ class GalaxyCatalog:
         z = getattr(self, "z")
         galaxies_in_ipix_array = np.isin(skymap_indices, ipix_array)
         return z[galaxies_in_ipix_array]
+
+    def get_redshifts_at_direction(self, theta, phi, alpha):
+        """
+        Get all galaxy redshifts at an angular distance alpha from a sky direction
+        (theta, phi).
+        """
+        center = hp.ang2vec(theta, phi)
+        # Get corresponding HEALPIX pixels
+        ipix_within_disc = hp.query_disc(nside=self.nside, vec=center, radius=alpha)
+        # Get corresponding galaxy redshifts
+        return self.z_at_index(ipix_within_disc)
+
+    def draw_redshifts(self, n_dir, alpha, n_min):
+        """
+        Return a generator with a list of galaxy redshifts for n_dir directions
+
+        Each direction is guaranteed to have at least n_min galaxies
+        """
+        theta = np.random.uniform(0, np.pi / 2, 10 * n_dir)
+        phi = np.random.uniform(0, 2 * np.pi, 10 * n_dir)
+        current_dir = 0
+        while current_dir < n_dir:
+            redshifts = self.get_redshifts_at_direction(
+                theta[current_dir], phi[current_dir], alpha
+            )
+            if len(redshifts) > n_min:
+                current_dir += 1
+                yield redshifts
