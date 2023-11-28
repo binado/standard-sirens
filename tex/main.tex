@@ -27,7 +27,7 @@
 %frontmatterverbose, 
 preprint,
 %preprintnumbers,
-%nofootinbib,
+nofootinbib,
 %nobibnotes,
 %bibnotes,
  amsmath,amssymb,
@@ -360,6 +360,7 @@ which appear in Eq.~\eqref{eq:intro:distance-redshift-relation}, namely $\{H_0, 
 	\Omega_{de}, w\}$.
 
 \subsection{A simplified approach}
+\label{sec:stat:simplified}
 
 In this section, we reproduce the formalism developed in Ref.~\onlinecite{Gair_2023}. In that
 paper, the authors perform a mock data analysis of the dark siren approach using the galaxy catalog
@@ -382,6 +383,7 @@ Instead, detection is assumed to happen if the \textit{measured} luminosity dist
 than a threshold, $d_L^{\rm{th}}$. If the GW likelihood is taken to be gaussian, that is,
 
 \begin{equation}
+	\label{eq:stat:gw-gaussian-likelihood}
 	\mathcal{L}(\hat{d}_L^i | d_L(z, H_0))
 	= \frac{1}{\sqrt{2 \pi} \sigma_{d_L}} \exp{\left [-\frac{1}{2} \left (\frac{\hat{d}_L^i - d_L(z, H_0)}{\sigma_{d_L}} \right )^2 \right ]},
 \end{equation}
@@ -392,8 +394,9 @@ then the detection probability can be expressed analytically with Eq.~\eqref{eq:
 	\pdet(z, H_0) & = \int_{-\infty}^{d_L^{\rm{th}}} \mathcal{L}(\hat{d}_L^i | d_L(z, H_0)) d \hat{d}_L^i                                    \\
 	              & = \frac{1}{2} \left [ 1 + \text{erf} \left (\frac{\hat{d}_L^i - d_L(z, H_0)}{ \sqrt{2} \sigma_{d_L}}  \right ) \right ].
 \end{align}
-where erf is the unilateral error function of the standard normal distribution. The uncertainty $\sigma_{d_L}$ is taken to be a constant fraction of $d_L$, such that
-$\sigma_{d_L} / d_L = C < 1$.
+
+where erf is the unilateral error function of the standard normal distribution. The uncertainty
+$\sigma_{d_L}$ is taken to be a constant fraction of $d_L$, such that $\sigma_{d_L} / d_L = C < 1$.
 
 The galaxy catalog information is used to compute the population model prior $\ppop(\vec{\theta} |
 	\vec{\Lambda}) = \ppop(z | H_0)$. Each galaxy in the catalog contributes with a term
@@ -401,13 +404,21 @@ The galaxy catalog information is used to compute the population model prior $\p
 \begin{equation}
 	\mathcal{L}_\text{EM}(\hat{z}_i | z_i)p(z_i | H_0),
 \end{equation}
-where $z_i$ and $\hat{z}_i$ are the galaxy's true and measured values, respectively. The likelihood encodes the measurement uncertainty, while the redshift prior
-depends on our knowledge of the galaxy distribution on redshift. A simple choice is to pick $p(z_i | H_0)$ to be uniform in a comoving volume, $p(z_i | H_0) \propto dV_c /dz$. The posterior on $H_0$ becomes
+
+where $z_i$ and $\hat{z}_i$ are the galaxy's true and measured values, respectively. The likelihood
+encodes the measurement uncertainty, while the redshift prior depends on our knowledge of the
+galaxy distribution on redshift. A simple choice is to pick $p(z_i | H_0)$ to be uniform in a
+comoving volume, $p(z_i | H_0) \propto dV_c /dz$. The posterior probability becomes
+
 \begin{equation}
-	\given{H_0}{d_\text{EM}, d_\text{GW}} \propto
+	\label{eq:stat:full-redshift-posterior}
+	\given{H_0, \{z_g\}}{d_\text{EM}, d_\text{GW}} \propto
 	\alpha^{-1}(H_0) \left [ \sum_{i=1}^{N_\text{gal}} \mathcal{L}_\text{GW}(d_\text{GW} | d_L(z_i, H_0)) \right ]
 	\prod_{j=1}^{N_\text{gal}} \mathcal{L}_\text{EM}(\hat{z}_j | z_j)p(z_j | H_0).
 \end{equation}
+
+The dependence on the true galaxy redshifts $\{z_g\}$ can then be marginalized over to recover the
+posterior distribution on $H_0$ only.
 
 Note that in the above expression we are implicitly neglecting cross-correlations between galaxies,
 for instance due to clustering. On the approximation that the galaxy redshifts are measured
@@ -428,6 +439,46 @@ Alternatively, we model the photo-$z$ redshift likelihood as a gaussian,
 
 with $\sigma_z \sim \rm{min}\{0.013(1+z)^3, 0.015\}$, following an empirical fit described in
 Ref.~\onlinecite{DES:2019ccw}.
+
+\section{Numerical method}
+
+We implement the framework developed in Sec.~\ref{sec:stat:simplified} as follows. Unlike
+Ref.~\onlinecite{Gair_2023}, we use real data from the \texttt{GLADE+} catalog
+\cite{D_lya_2018,D_lya_2022} \footnote{The catalog is publicly available for download at
+	\url{https://glade.elte.hu/}.}, which is a compilation of six different astronomical surveys,
+containing about 22 million galaxies. It covers the full sky with a 20\% completeness up to about
+800 Mpc. The gravitational wave data, on the other hand, is generated from the catalog directly:
+
+\begin{enumerate}
+	\item A direction $(\theta, \varphi)$ on the sky is picked, and all galaxies within an angular radius
+	      $\alpha$ of it are selected as candidate hosts for the coalescences.
+	\item A sample of $N_\text{gw}$ redshifts are drawn uniformly from said galaxies in the range $0 \leq z
+		      \leq z_\text{max}$, where $z_\text{max}$ is a constant value fixed \textit{a priori}.
+	\item The drawn redshifts are converted into \text{true} luminosity distances supposing a fiducial flat
+	      $\Lambda$CDM cosmology with $\Omega_m = 0.3$ and $H_0 = 70 \, \rm{km} \, \rm{s}^{-1} \,
+		      \rm{Mpc}^{-1}$. Each distance value is associated to a mock gravitational wave event.
+	\item The \textit{measured} luminosity distances are drawn from their respective true values consistently
+	      with the GW gaussian likelihood of Eq.~\eqref{eq:stat:gw-gaussian-likelihood}.
+
+\end{enumerate}
+
+Our methodology is evidently a simple proof of concept of the galaxy catalog approach to dark siren
+cosmography. Still, it is important to highlight the limitations to our method, and the
+approximations that are made. Firstly, the data-generating process: we are generating mock events
+\textit{uniformly} from the available galaxies in the catalog. The resulting redshift distribution
+of CBCs is inevitably inaccurate for two reasons: the galaxies may not be equally likely to host
+these mergers; the latter may indeed depend on their masses, luminosities, metallicities, etc.
+Secondly, the galaxy distribution in the catalog does not reproduce the real distribution due to
+the catalog's incompleteness. The selected redshifts will be artificially small because of this.
+This should not spoil the analysis, so long as the mock events' generation is consistent with the
+likelihood model. In particular, we expect that the posterior distribution should peak around the
+fiducial value of $H_0$ used in the $z-d_L$ conversion. The galaxy distribution in the catalog,
+however, is not expected to be reproduce this background cosmology. Moreover, the (assumed true)
+redshifts of the coalescences are drawn from real measurements, and therefore do not correspond to
+the true redshits of their corresponding hosts. This distinction does not play a role when the
+spectroscopic$-z$ approximation is considered, namely the likelihood in
+Eq.~\eqref{eq:stat:perfect-redshift-posterior}, although it becomes important for the broad case
+where redshift uncertainty is incorporated into the analysis.
 
 \bibliography{refs}% Produces the bibliography via BibTeX.
 
