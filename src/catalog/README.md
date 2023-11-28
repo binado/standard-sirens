@@ -8,4 +8,4 @@ python parse_catalog.py --help
 
 for more details.
 
-This [`notebook`](./visualize_catalog.ipynb) helps visualizing the parsed data.
+This [`notebook`](../visualize_catalog.ipynb) helps visualizing the parsed data.
