@@ -478,15 +478,27 @@ in Eq.~\eqref{eq:stat:perfect-redshift-posterior}, although it becomes important
 where redshift uncertainty is incorporated into the analysis.
 
 A number of approximations were also made in our likelihood model. The GW likelihood
-$\given{\vec{d}}{\vec{\theta}}$ does not, in general, follow a normal distribution. A more accurate
-procedure is to apply Bayes's theorem and to discretely sample the posterior
-$\given{\vec{\theta}}{\vec{d}}$ reconstructed in the single-event parameter estimation with assumed
-prior $\pi (\vec{\theta})$. Likewise, the photo$-z$ PDF may be more complicated than
-Eq.~\eqref{eq:stat:photo-z-likelihood}, and may be estimated with more sophisticated methods, such
-as neural networks~\cite{Palmese_2023,alfradique2023dark}.
+$\given{\vec{d}}{\vec{\theta}}$ does not, in general, follow a normal distribution. In real
+analyses, while a similar ansatz can be used for the conditional probability of the distance $d$ to
+the event given a sky direction $\mathbf{\hat{n}}$~\cite{Singer_2016}, a more accurate procedure is
+to apply Bayes's theorem and to discretely sample the posterior $\given{\vec{\theta}}{\vec{d}}$
+reconstructed in the single-event parameter estimation with assumed prior $\pi (\vec{\theta})$.
+Likewise, the photo$-z$ PDF may be more complicated than Eq.~\eqref{eq:stat:photo-z-likelihood},
+and can be estimated with more sophisticated methods, such as neural
+networks~\cite{Palmese_2023,alfradique2023dark}. Moreover, as already mentioned, a more realistic
+computation of the selection effects involves injecting artificial signals and computing the number
+of detections at the selected sensitivity. Finally, when using real GW data, the set of candidate
+host galaxies should be extracted from the credible regions estimated from the events' skymaps -
+for instance, with the \texttt{BAYESTAR} package~\cite{PhysRevD.93.024013}.
+
+We have also explicitly ignored completeness corrections to the galaxy catalog. In our toy model,
+this is not as problematic since the CBCs are generated from the catalog itself. In the general
+case, however, not accounting for the incompleteness will make the inference far less informative
+for events that occured at higher redshifts, which are commonplace for BBHs.
 
 The implementation is available in the Github repository
-\url{https://github.com/binado/standard-sirens/tree/main}.
+\url{https://github.com/binado/standard-sirens/tree/main}. The idea is to make it a playground for
+exploring different strategies for performing inference with standard sirens.
 
 \bibliography{refs}% Produces the bibliography via BibTeX.
 
