@@ -88,13 +88,8 @@ nofootinbib,
 %  but any date may be explicitly specified
 
 \begin{abstract}
-	An article usually includes an abstract, a concise summary of the work
-	covered at length in the main body of the article.
-	\begin{description}
-		\item[Usage] Secondary publications and information retrieval purposes.
-		\item[Structure] You may use the \texttt{description} environment to structure your abstract; use the
-		      optional argument of the \verb+\item+ command to give the category of each item.
-	\end{description}
+	The detection of gravitational waves has marked a new era in multi-messenger astronomy.
+	In particular, they can serve as cosmological probes to understand the history of cosmic expansion.
 \end{abstract}
 
 %\keywords{Suggested keywords}%Use showkeys class option if keyword
@@ -379,8 +374,9 @@ used to produce the GW event catalog, recording which observations are detected.
 required injections to estimate the selection function precisely enough scales linearly with the
 size of the event catalog~\cite{essick2022precision}.
 
-Instead, detection is assumed to happen if the \textit{measured} luminosity distance is smaller
-than a threshold, $d_L^{\rm{th}}$. If the GW likelihood is taken to be gaussian, that is,
+Instead, we make the following simplification: detection is assumed to happen if the
+\textit{measured} luminosity distance is smaller than a threshold, $d_L^{\rm{th}}$. If the GW
+likelihood is taken to be gaussian, that is,
 
 \begin{equation}
 	\label{eq:stat:gw-gaussian-likelihood}
@@ -434,13 +430,14 @@ single GW event reduces to a simple form:
 Alternatively, we model the photo-$z$ redshift likelihood as a gaussian,
 
 \begin{equation}
+	\label{eq:stat:photo-z-likelihood}
 	\mathcal{L}_\text{EM}(\hat{z}_j | z_j) = \frac{1}{\sqrt{2 \pi} \sigma_z} \exp{\left [-\frac{1}{2} \left (\frac{\hat{z}_j - z_j}{\sigma_z} \right )^2 \right ]},
 \end{equation}
 
 with $\sigma_z \sim \rm{min}\{0.013(1+z)^3, 0.015\}$, following an empirical fit described in
 Ref.~\onlinecite{DES:2019ccw}.
 
-\section{Numerical method}
+\section{Method}
 
 We implement the framework developed in Sec.~\ref{sec:stat:simplified} as follows. Unlike
 Ref.~\onlinecite{Gair_2023}, we use real data from the \texttt{GLADE+} catalog
@@ -463,22 +460,33 @@ containing about 22 million galaxies. It covers the full sky with a 20\% complet
 \end{enumerate}
 
 Our methodology is evidently a simple proof of concept of the galaxy catalog approach to dark siren
-cosmography. Still, it is important to highlight the limitations to our method, and the
-approximations that are made. Firstly, the data-generating process: we are generating mock events
-\textit{uniformly} from the available galaxies in the catalog. The resulting redshift distribution
-of CBCs is inevitably inaccurate for two reasons: the galaxies may not be equally likely to host
-these mergers; the latter may indeed depend on their masses, luminosities, metallicities, etc.
-Secondly, the galaxy distribution in the catalog does not reproduce the real distribution due to
-the catalog's incompleteness. The selected redshifts will be artificially small because of this.
-This should not spoil the analysis, so long as the mock events' generation is consistent with the
-likelihood model. In particular, we expect that the posterior distribution should peak around the
-fiducial value of $H_0$ used in the $z-d_L$ conversion. The galaxy distribution in the catalog,
-however, is not expected to be reproduce this background cosmology. Moreover, the (assumed true)
-redshifts of the coalescences are drawn from real measurements, and therefore do not correspond to
-the true redshits of their corresponding hosts. This distinction does not play a role when the
-spectroscopic$-z$ approximation is considered, namely the likelihood in
-Eq.~\eqref{eq:stat:perfect-redshift-posterior}, although it becomes important for the broad case
+cosmography. Still, it is important to highlight the limitations to our method, as well as the
+approximations that are made. Firstly, the simplified data-generating process: we are generating
+mock events \textit{uniformly} from the available galaxies in the catalog. The resulting redshift
+distribution of CBCs is inevitably inaccurate for two reasons: the galaxies may not be equally
+likely to host these mergers; the latter may indeed depend on their masses, luminosities,
+metallicities, etc. Secondly, the galaxy distribution in the catalog does not reproduce the real
+distribution due to the catalog's incompleteness. The selected redshifts will be artificially small
+because of this. This should not spoil the analysis, so long as the mock events' generation is
+consistent with the likelihood model. In particular, we expect that the posterior distribution
+should peak around the fiducial value of $H_0$ used in the $z-d_L$ conversion. The galaxy
+distribution in the catalog, however, is not expected to be reproduce this background cosmology.
+Moreover, the (assumed true) redshifts of the coalescences are drawn from real measurements, and
+therefore do not correspond to the true redshits of their corresponding hosts. This distinction
+does not play a role when the spectroscopic$-z$ approximation is considered, namely the likelihood
+in Eq.~\eqref{eq:stat:perfect-redshift-posterior}, although it becomes important for the broad case
 where redshift uncertainty is incorporated into the analysis.
+
+A number of approximations were also made in our likelihood model. The GW likelihood
+$\given{\vec{d}}{\vec{\theta}}$ does not, in general, follow a normal distribution. A more accurate
+procedure is to apply Bayes's theorem and to discretely sample the posterior
+$\given{\vec{\theta}}{\vec{d}}$ reconstructed in the single-event parameter estimation with assumed
+prior $\pi (\vec{\theta})$. Likewise, the photo$-z$ PDF may be more complicated than
+Eq.~\eqref{eq:stat:photo-z-likelihood}, and may be estimated with more sophisticated methods, such
+as neural networks~\cite{Palmese_2023,alfradique2023dark}.
+
+The implementation is available in the Github repository
+\url{https://github.com/binado/standard-sirens/tree/main}.
 
 \bibliography{refs}% Produces the bibliography via BibTeX.
 
