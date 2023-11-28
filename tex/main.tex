@@ -222,8 +222,8 @@ detected. The standard formalism for extracting the true source population param
 incorporating these biases in the analysis is frequently labeled as Hierarchical Bayesian
 inference, see~\cite{Loredo:2004nn,Mandel:2018mve,Vitale_2021}.
 
-In the discussion below, we will follow the framework outlined in Ref.~\onlinecite{Gair_2023},
-which is a pedagogical resource on the galaxy catalog approach.
+In the discussion below, we will follow the framework outlined in Ref.~\onlinecite{Gair_2023}
+(hereinafter HG23), which is a pedagogical resource on the galaxy catalog approach.
 
 The GW population distribution is sampled with a set of $\nobs$ \textit{observed} events with true
 parameters $\{ \vec{\theta}_i \}$, $i \in \{1, \cdots, \nobs\}$. We do not have direct access to
@@ -357,11 +357,11 @@ which appear in Eq.~\eqref{eq:intro:distance-redshift-relation}, namely $\{H_0, 
 \subsection{A simplified approach}
 \label{sec:stat:simplified}
 
-In this section, we reproduce the formalism developed in Ref.~\onlinecite{Gair_2023}. In that
-paper, the authors perform a mock data analysis of the dark siren approach using the galaxy catalog
-method to demonstrate its capability to recover an unbiased posterior for $H_0$. They consider that
-the remaining cosmological parameters, such as $\Omega_m$ and $w_\text{DE}$, are fixed to fiducial
-values. They make a series of simplifying assumptions on $p_{det}$, $p_{pop}$ and
+In this section, we reproduce the formalism developed in HG23. In that paper, the authors perform a
+mock data analysis of the dark siren approach using the galaxy catalog method to demonstrate its
+capability to recover an unbiased posterior for $H_0$. They consider that the remaining
+cosmological parameters, such as $\Omega_m$ and $w_\text{DE}$, are fixed to fiducial values. They
+make a series of simplifying assumptions on $p_{det}$, $p_{pop}$ and
 $\given{\vec{d}}{\vec{\theta}}$, which we discuss below.
 
 The selection effects, encoded in the $\alpha (\Lambda )$ term from Eq.~\eqref{eq:stat:nalpha}, not
@@ -439,12 +439,44 @@ Ref.~\onlinecite{DES:2019ccw}.
 
 \section{Method}
 
-We implement the framework developed in Sec.~\ref{sec:stat:simplified} as follows. Unlike
-Ref.~\onlinecite{Gair_2023}, we use real data from the \texttt{GLADE+} catalog
-\cite{D_lya_2018,D_lya_2022} \footnote{The catalog is publicly available for download at
-	\url{https://glade.elte.hu/}.}, which is a compilation of six different astronomical surveys,
-containing about 22 million galaxies. It covers the full sky with a 20\% completeness up to about
-800 Mpc. The gravitational wave data, on the other hand, is generated from the catalog directly:
+We follow the framework developed in Sec.~\ref{sec:stat:simplified} as follows. Unlike HG23, we use
+real data from the \texttt{GLADE+} catalog \cite{D_lya_2018,D_lya_2022} \footnote{The catalog is
+	publicly available for download at \url{https://glade.elte.hu/}.}, which is a compilation of six
+different astronomical surveys, containing about 22 million galaxies. It covers the full sky with a
+20\% completeness up to about 800 Mpc.
+
+\subsection{Preparing the galaxy catalog}
+
+We implement a simple post-processing pipeline to the \texttt{GLADE+} catalog. We remove objects
+that are identified as quasars or galaxy clusters, objects with no measured redshift, and close-by
+galaxies ($z<0.05$) with no peculiar velocity corrections. The sky locations of the galaxies are
+assigned to unique, equally-sized pixels using \texttt{healpy}, a Python implementation of the
+HEALPIX software~\cite{2005ApJ...622..759G,Zonca2019}
+\footnote{\url{http://healpix.sourceforge.net}}. The \texttt{nside} parameter, which controls the
+pixel resolution, is set to 32. The total number of pixels is 12\texttt{nside}$^2$ = 12888, and
+each pixel covers approximately 1.8$^{\circ}$ of the sky. We do not analyse the impact of the
+choice of this parameter on our results, which has been shown not to be
+significant~\cite{Gray_2022}. Fig.~\ref{fig:galaxy-map} illustrates the galaxy distribution in the
+catalog across the whole sky, and Fig.~\ref{fig:galaxy-redshift-distribution} shows a histogram of
+the galaxy distribution per redshift.
+
+\begin{figure}[!ht]
+	\caption{A Mollweide projection of the galaxy number counts across the sky after our post-processing step of the \texttt{GLADE+} catalog.}
+	\centering
+	\includegraphics[width=\textwidth]{../src/figures/galaxy-map.png}
+	\label{fig:galaxy-map}
+\end{figure}
+
+\begin{figure}[!ht]
+	\caption{\textit{Left:} a histogram of the galaxy number count per redshift bin in the (whole-sky) catalog we consider. \textit{Right:} the same histogram for all galaxies up to $z=1.5$.}
+	\centering
+	\includegraphics[width=\textwidth]{../src/figures/galaxy-redshift-distribution.png}
+	\label{fig:galaxy-redshift-distribution}
+\end{figure}
+
+\subsection{The gravitational wave data}
+
+The gravitational wave data is generated from the catalog directly:
 
 \begin{enumerate}
 	\item A direction $(\theta, \varphi)$ on the sky is picked, and all galaxies within an angular radius
@@ -459,16 +491,20 @@ containing about 22 million galaxies. It covers the full sky with a 20\% complet
 
 \end{enumerate}
 
+Similar to HG23, we analyse two separate cases: the perfect-redshift limit and the full likelihood
+from Eq.~\eqref{eq:stat:full-redshift-posterior}. We set $\sigma_L / d_L \in \{0.1, 0.2, 0.3\}$,
+and we fix $z_\text{max} = 1.4$ and $d_L^{\rm{th}} = 1550 \,$Mpc.
+
 Our methodology is evidently a simple proof of concept of the galaxy catalog approach to dark siren
 cosmography. Still, it is important to highlight the limitations to our method, as well as the
 approximations that are made. Firstly, the simplified data-generating process: we are generating
 mock events \textit{uniformly} from the available galaxies in the catalog. The resulting redshift
-distribution of CBCs is inevitably inaccurate for two reasons: the galaxies may not be equally
-likely to host these mergers; the latter may indeed depend on their masses, luminosities,
+distribution of CBCs is inevitably inaccurate for two reasons: the galaxies may not equally be
+likely to host these mergers; this may also be a function of their masses, luminosities,
 metallicities, etc. Secondly, the galaxy distribution in the catalog does not reproduce the real
-distribution due to the catalog's incompleteness. The selected redshifts will be artificially small
-because of this. This should not spoil the analysis, so long as the mock events' generation is
-consistent with the likelihood model. In particular, we expect that the posterior distribution
+distribution due to the the latter's incompleteness. The selected redshifts will be artificially
+small because of this. This should not spoil the analysis, so long as the mock events' generation
+is consistent with the likelihood model. In particular, we expect that the posterior distribution
 should peak around the fiducial value of $H_0$ used in the $z-d_L$ conversion. The galaxy
 distribution in the catalog, however, is not expected to be reproduce this background cosmology.
 Moreover, the (assumed true) redshifts of the coalescences are drawn from real measurements, and
@@ -479,10 +515,10 @@ where redshift uncertainty is incorporated into the analysis.
 
 A number of approximations were also made in our likelihood model. The GW likelihood
 $\given{\vec{d}}{\vec{\theta}}$ does not, in general, follow a normal distribution. In real
-analyses, while a similar ansatz can be used for the conditional probability of the distance $d$ to
-the event given a sky direction $\mathbf{\hat{n}}$~\cite{Singer_2016}, a more accurate procedure is
-to apply Bayes's theorem and to discretely sample the posterior $\given{\vec{\theta}}{\vec{d}}$
-reconstructed in the single-event parameter estimation with assumed prior $\pi (\vec{\theta})$.
+analyses, while a similar ansatz can be used for the conditional probability of the distance to the
+event given a sky direction~\cite{Singer_2016}, a more accurate procedure is to apply Bayes's
+theorem and to discretely sample the posterior $\given{\vec{\theta}}{\vec{d}}$ reconstructed in the
+single-event parameter estimation with assumed prior $\pi (\vec{\theta})$~\cite{Mandel:2018mve}.
 Likewise, the photo$-z$ PDF may be more complicated than Eq.~\eqref{eq:stat:photo-z-likelihood},
 and can be estimated with more sophisticated methods, such as neural
 networks~\cite{Palmese_2023,alfradique2023dark}. Moreover, as already mentioned, a more realistic
@@ -491,14 +527,23 @@ of detections at the selected sensitivity. Finally, when using real GW data, the
 host galaxies should be extracted from the credible regions estimated from the events' skymaps -
 for instance, with the \texttt{BAYESTAR} package~\cite{PhysRevD.93.024013}.
 
-We have also explicitly ignored completeness corrections to the galaxy catalog. In our toy model,
-this is not as problematic since the CBCs are generated from the catalog itself. In the general
-case, however, not accounting for the incompleteness will make the inference far less informative
-for events that occured at higher redshifts, which are commonplace for BBHs.
+We have also explicitly ignored completeness corrections to the magnitude-limited galaxy catalog.
+In our toy model, this is not as problematic since the CBCs are generated from the catalog itself.
+In the general case, however, not accounting for the incompleteness will make the inference biased
+as well as far less informative for events that occured at higher redshifts, which are commonplace
+for BBHs. See Ref.~\onlinecite{dalang2023clustering} for a review of different completeness
+corrections adopted in the literature.
 
 The implementation is available in the Github repository
 \url{https://github.com/binado/standard-sirens/tree/main}. The idea is to make it a playground for
 exploring different strategies for performing inference with standard sirens.
+
+\section{Results and discussion}
+
+\section{Conclusion}
+
+This manuscript is intended as a pedagogical introduction to gravitational-wave standard sirens as
+cosmological probes.
 
 \bibliography{refs}% Produces the bibliography via BibTeX.
 
