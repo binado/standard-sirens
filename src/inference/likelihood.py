@@ -11,18 +11,32 @@ def combine_posteriors(posterior_matrix, param_arr):
     Return the normalised combined posterior given a posterior matrix
     and a parameter array as the domain of integration.
     """
+    # # Normalize posterior matrix, add constant eps to avoid underflow
+    # norm = simpson(posterior_matrix, param_arr) + eps
+    # posterior_matrix /= norm.reshape(-1, 1)
+    # # Compute posterior with exp(logsumexp) trick to prevent numerical underflows
+    # log_posterior_matrix = np.log(posterior_matrix)
+    # combined_posterior = np.exp(logsumexp(log_posterior_matrix, axis=0))
+    # combined_norm = simpson(combined_posterior, param_arr)
+
     combined_posterior = np.ones_like(param_arr)
     n_events, n_param_samples = posterior_matrix.shape
     assert n_param_samples == len(param_arr)
     for i in range(n_events):
         # Normalize posterior for event i
-        posterior_matrix[i, :] /= simpson(posterior_matrix[i, :], param_arr)
+        norm = simpson(posterior_matrix[i, :], param_arr) + eps
+        posterior_matrix[i, :] /= norm
 
         # Normalize combined posterior with event i
         combined_posterior *= posterior_matrix[i, :]
-        # combined_posterior /= simpson(combined_posterior, param_arr)
+        combined_norm = simpson(combined_posterior, param_arr) + eps
+        combined_posterior /= combined_norm
 
-    combined_posterior /= simpson(combined_posterior, param_arr)
+    # combined_posterior /= simpson(combined_posterior, param_arr)
+    # if combined_norm <= 0:
+    #     print("Null posterior encountered")
+    # else:
+    #     combined_posterior /= combined_norm
     return combined_posterior, posterior_matrix
 
 
@@ -80,9 +94,7 @@ class DrawnGWInference(HierarchicalBayesianInference):
         return gaussian(z, z_gal, self.redshift_sigma(z))
 
     def draw_from_redshift_likelihood(self, z_true):
-        return z_true + self.redshift_sigma(z_true) * np.random.standard_normal(
-            len(z_true)
-        )
+        return z_true + self.redshift_sigma(z_true) * np.random.standard_normal(len(z_true))
 
     def gw_likelihood(self, dl, true_dl):
         """
@@ -121,7 +133,7 @@ class DrawnGWInference(HierarchicalBayesianInference):
         p_rate[z_gal <= self.z_draw_max] = 1
         return p_rate / np.sum(p_rate)
 
-    def draw_gw_events(self, z_gal, n_gw, sigma_constant):
+    def draw_gw_events(self, z_gal, sigma_constant, n_gw=None, gw_noise=None):
         # Uniform merger probability on 0 < z < z_draw_max
         p_rate = self.uniform_p_rate(z_gal)
 
@@ -131,10 +143,14 @@ class DrawnGWInference(HierarchicalBayesianInference):
         # Convert them into "true" gw luminosity distances using a fiducial cosmology
         drawn_gw_dls = self.luminosity_distance(drawn_gw_zs)
 
+        # Compute noise
+        assert n_gw is not None or gw_noise is not None, "Either n_gw or gw_noise_arr must be set"
+        noise = gw_noise if gw_noise is not None else np.random.standard_normal(n_gw)
+
         # Convert true gw luminosity distances into measured values
         # drawn from a normal distribution consistent with the GW likelihood
         sigma_dl = drawn_gw_dls * sigma_constant
-        observed_gw_dls = np.random.standard_normal(n_gw) * sigma_dl + drawn_gw_dls
+        observed_gw_dls = noise * sigma_dl + drawn_gw_dls
         # Filter events whose dL exceeds threshold
         return observed_gw_dls[observed_gw_dls < self.dl_th]
 
@@ -173,15 +189,11 @@ class DrawnGWCatalogPerfectRedshiftInference(DrawnGWInference):
         for gws_in_dir_i, z_gal_i in zip(gw_dl_array, z_gal):
             p_rate = self.uniform_p_rate(z_gal_i)
             dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z(H0_array, z_gal_i)
-            selection_effects = np.dot(
-                self.detection_probability(dl_by_H0_by_gal_matrix), p_rate
-            )
+            selection_effects = np.dot(self.detection_probability(dl_by_H0_by_gal_matrix), p_rate)
             # Loop through GWs for a fixed direction
             for gw_dl_j in gws_in_dir_i:
                 # sum over galaxies of p(d_L | d_L(H0, z_gal)) for each H0
-                numerator = np.dot(
-                    self.gw_likelihood(gw_dl_j, dl_by_H0_by_gal_matrix), p_rate
-                )
+                numerator = np.dot(self.gw_likelihood(gw_dl_j, dl_by_H0_by_gal_matrix), p_rate)
                 likelihood_matrix[current_gw_idx, :] = numerator / selection_effects
                 current_gw_idx += 1
         assert current_gw_idx == n_gw
@@ -207,9 +219,7 @@ class DrawnGWCatalogFullInference(DrawnGWInference):
         p_bg = self.fiducial_cosmology.differential_comoving_volume(z).value
 
         # Create n_z x n_z_gal redshift likelihood matrix
-        z_gal_by_z_likelihood = np.array(
-            [self.redshift_likelihood(z, z_gal_i) for z_gal_i in z_gal]
-        )
+        z_gal_by_z_likelihood = np.array([self.redshift_likelihood(z, z_gal_i) for z_gal_i in z_gal])
 
         # This is an n_gal x n_z matrix
         p_cbc = z_gal_by_z_likelihood * p_bg * p_rate
@@ -257,8 +267,7 @@ class DrawnGWCatalogFullInference(DrawnGWInference):
                 # Loop through GWs for a fixed direction
                 for gw_dl_j in gws_in_dir_i:
                     likelihood_matrix[current_gw_idx, :] = (
-                        self.gw_likelihood_array(gw_dl_j, H0_array, z, p_rate)
-                        / selection_effects
+                        self.gw_likelihood_array(gw_dl_j, H0_array, z, p_rate) / selection_effects
                     )
                     current_gw_idx += 1
             assert current_gw_idx == n_gw
@@ -267,10 +276,7 @@ class DrawnGWCatalogFullInference(DrawnGWInference):
             p_rate = self.p_cbc(z, z_gal)
             selection_effects = self.selection_effects(H0_array, z, p_rate)
             for i, gw_dl in enumerate(gw_dl_array):
-                likelihood_matrix[i, :] = (
-                    self.gw_likelihood_array(gw_dl, H0_array, z, p_rate)
-                    / selection_effects
-                )
+                likelihood_matrix[i, :] = self.gw_likelihood_array(gw_dl, H0_array, z, p_rate) / selection_effects
 
         return combine_posteriors(likelihood_matrix, H0_array)
 
@@ -317,12 +323,7 @@ class DrawnGWMergerRatePriorInference(DrawnGWInference):
 
     def likelihood(self, gw_dl_array, H0_array, z):
         gw_dl_flatenned_array = np.concatenate(gw_dl_array)
-        likelihood_matrix = np.array(
-            [
-                self.gw_likelihood_array(gw_dl, H0_array, z)
-                for gw_dl in gw_dl_flatenned_array
-            ]
-        )
+        likelihood_matrix = np.array([self.gw_likelihood_array(gw_dl, H0_array, z) for gw_dl in gw_dl_flatenned_array])
         selection_effects = self.selection_effects(H0_array, z)
         likelihood_matrix /= selection_effects
         return combine_posteriors(likelihood_matrix, H0_array)
