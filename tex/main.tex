@@ -568,7 +568,7 @@ a playground for exploring different strategies for performing inference with st
 
 The results are presented in Figs.~\ref{fig:perfect-redshift-posterior} -
 \ref{fig:full-inference-posterior}, for the spectroscopic-like and photometric-like redshift
-uncertainties, respectively. Fig~\ref{fig:posterior-comparison} represents a side-by-side
+uncertainties, respectively; Fig~\ref{fig:posterior-comparison} represents a side-by-side
 comparison of both cases for different levels of luminosity distance uncertainty. As expected, a GW
 likelihood with smaller uncertainty generates a more informative posterior. Nevertheless, since we
 are dealing with simulated data, it is imporatant to keep in mind that the position and the height
@@ -588,9 +588,10 @@ procedure is computationally viable because our 1-dimensional posterior does not
 minute to compute. In real analyses, however, where (multiple) cosmological parameters are jointly
 estimated with, for instance, the black hole mass distribution, running several MCMC chains may be
 intractable, or require a clever parallelization scheme. The p-p plots are represented in
-Figs.~\ref{fig:pp-analysis-perfect-redshift}. We observe that all curves approximately follow the
-straight 45$^{\circ}$ line which, as argued above, is the expected behaviour for an unbiased
-inference. There are no significant deviations from it at any interval.
+Figs.~\ref{fig:pp-analysis-perfect-redshift}-\ref{fig:pp-analysis-full-inference}. We observe that
+all curves approximately follow the straight 45$^{\circ}$ line which, as argued above, is the
+expected behaviour for an unbiased inference. There are no significant deviations from it at any
+interval.
 
 \begin{figure}[!ht]
 	\caption{The posterior probability distribution on $H_0$ for the inference under the perfect redshift measurement assumption,
@@ -622,7 +623,7 @@ inference. There are no significant deviations from it at any interval.
 	\caption{p-p plot for the inference on perfect redshift measurement limit. The pipeline was run 100 times.
 		The blue, orange and green curves correspond to $C=0.1 \, 0.2, \, 0.3$ respectively.
 		The grey regions correspond to the $1\sigma$, $2\sigma$ and $3\sigma$ confidence levels.}
-	\includegraphics[width=0.8\textwidth]{../src/figures/pp_analysis-perfect-redshift.png}
+	\includegraphics[width=0.8\textwidth]{../src/figures/pp-analysis-perfect-redshift.png}
 	\label{fig:pp-analysis-perfect-redshift}
 \end{figure}
 
@@ -630,7 +631,7 @@ inference. There are no significant deviations from it at any interval.
 	\caption{p-p plot for the inference on perfect redshift measurement limit. The pipeline was run 100 times.
 		The blue, orange and green curves correspond to $C=0.1 \, 0.2, \, 0.3$ respectively.
 		The grey regions correspond to the $1\sigma$, $2\sigma$ and $3\sigma$ confidence levels.}
-	\includegraphics[width=0.8\textwidth]{../src/figures/pp_analysis-perfect-redshift.png}
+	\includegraphics[width=0.8\textwidth]{../src/figures/pp-analysis-perfect-redshift.png}
 	\label{fig:pp-analysis-full-inference}
 \end{figure}
 
