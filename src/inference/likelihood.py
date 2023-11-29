@@ -1,7 +1,10 @@
 import numpy as np
-from scipy.special import erf
+from scipy.special import erf, logsumexp
 from scipy.integrate import simpson
 from .utils import flat_cosmology, gaussian, lognormal
+from .constants import eps
+
+# logger = get_logger()
 
 GW_LIKELIHOOD_DIST_OPTIONS = ("normal", "lognormal")
 
