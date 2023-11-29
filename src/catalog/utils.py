@@ -63,13 +63,17 @@ class GalaxyCatalog:
 
         Each direction is guaranteed to have at least n_min galaxies
         """
-        theta = np.random.uniform(0, np.pi / 2, 10 * n_dir)
-        phi = np.random.uniform(0, 2 * np.pi, 10 * n_dir)
+        # Generate large enough sample of directions as some might be rejected
+        n_sim = 10 * n_dir
+        theta = np.random.uniform(0, np.pi / 2, n_sim)
+        phi = np.random.uniform(0, 2 * np.pi, n_sim)
+
         current_dir = 0
-        while current_dir < n_dir:
-            redshifts = self.get_redshifts_at_direction(
-                theta[current_dir], phi[current_dir], alpha
-            )
+        redshifts_by_dir = []
+        for i in range(n_sim):
+            redshifts = self.get_redshifts_at_direction(theta[i], phi[i], alpha)
             if len(redshifts) > n_min:
                 current_dir += 1
-                yield redshifts
+                redshifts_by_dir.append(redshifts)
+            if current_dir >= n_dir:
+                return redshifts_by_dir
