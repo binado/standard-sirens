@@ -6,6 +6,7 @@ You will also find Jupyter notebooks which complement the discussion in the main
 
 - [Visualizing the galaxy catalog](./src/visualize_catalog.ipynb)
 - [Inferring $H_0$ with standard sirens](./src/inferring_H0_with_standard_sirens.ipynb)
+- [Inference bias analysis with p-p plots](./src/pp_analysis.ipynb)
 
 ## Installation
 
