@@ -25,6 +25,7 @@ tex/*.bbl
 tex/*.blg
 tex/*.gz
 tex/*.out
+tex/*.pdf
 
 # Distribution / packaging
 .Python
