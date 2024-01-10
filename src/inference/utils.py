@@ -1,7 +1,11 @@
 import numpy as np
-from scipy.integrate import cumulative_trapezoid
+from scipy.integrate import cumulative_trapezoid, simpson
 from astropy.cosmology import FlatLambdaCDM
 from .constants import Om0
+
+
+def normalize(y, x):
+    return y / simpson(y, x)
 
 
 def gaussian(x, mu, sigma):
