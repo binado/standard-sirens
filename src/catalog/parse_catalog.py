@@ -5,6 +5,7 @@ import h5py
 import argparse
 from pathlib import Path
 import os
+from tqdm import tqdm
 
 
 dirname = os.getcwd()
@@ -12,20 +13,13 @@ dirname = os.getcwd()
 
 # Default options
 default_chunksize = 100000  # Row chunk size in pandas.read_csv
-chunk_step_progress_message = 10
-default_nside = 1024  # nside HEALPIX parameter
+default_nside = 32  # nside HEALPIX parameter
 
 # Adding CLI arguments
-argument_parser = argparse.ArgumentParser(
-    prog="parse_catalog", description="Parse GLADE+ catalog"
-)
+argument_parser = argparse.ArgumentParser(prog="parse_catalog", description="Parse GLADE+ catalog")
 argument_parser.add_argument("filename", type=Path, help="Catalog file name")
-argument_parser.add_argument(
-    "-o", "--output", default="output.hdf5", help="Output file name"
-)
-argument_parser.add_argument(
-    "--nside", type=int, default=default_nside, help="nside HEALPIX parameter"
-)
+argument_parser.add_argument("-o", "--output", default="output.hdf5", help="Output file name")
+argument_parser.add_argument("--nside", type=int, default=default_nside, help="nside HEALPIX parameter")
 argument_parser.add_argument(
     "-n",
     "--nrows",
@@ -33,9 +27,7 @@ argument_parser.add_argument(
     type=int,
     help="Number of catalog rows to read, useful for debugging",
 )
-argument_parser.add_argument(
-    "--nest", action="store_true", help="nest parameter when pixelizing with HEALPIX"
-)
+argument_parser.add_argument("--nest", action="store_true", help="nest parameter when pixelizing with HEALPIX")
 argument_parser.add_argument(
     "-c",
     "--chunksize",
@@ -63,6 +55,8 @@ dtypes = {
     "peculiar_velocity_err": np.float64,
     "z_helio_err": np.float64,
     "redshift_dl_flag": "Int64",
+    "mass": np.float64,
+    "mass_err": np.float64,
 }
 
 
@@ -75,6 +69,8 @@ def filter_chunk(df):
     df = df[(df["redshift_dl_flag"] == 1) | (df["redshift_dl_flag"] == 3)]
     # Remove close by galaxies without peculiar velocity corrections
     df = df[~((df["peculiar_velocity_correction_flag"] == 0) & (df["z_cmb"] < 0.05))]
+    # Remove galaxies with no mass
+    df = df[df["mass"].notnull()]
     return df
 
 
@@ -120,19 +116,11 @@ if __name__ == "__main__":
             if nrows is not None:
                 print(f"Parsing the first {nrows} galaxies")
 
-        for index, chunk in enumerate(reader):
+        for index, chunk in tqdm(enumerate(reader)):
             # print(f"chunk has {chunk.shape[0]} rows")
             catalog = pd.concat([catalog, filter_chunk(chunk)], ignore_index=True)
-            if verbose and (index + 1) % chunk_step_progress_message == 0:
-                print(f"Parsed chunk number {index + 1}")
-                print(f"Parsed catalog has {catalog.shape[0]} rows")
-                print(f"{chunksize * (index + 1) - catalog.shape[0]} rows filtered out")
-                print(
-                    "{:.1f}% rows included".format(
-                        100 * catalog.shape[0] / chunksize / (index + 1)
-                    )
-                )
-                print("-------------------------------------------")
+    if verbose:
+        print(f"Catalog parsed successfully with {catalog.shape[0]} objects.")
 
     # Extract data from catalog
     # (theta, phi) = (ra * 180 / pi + pi/2, dec * 180 / pi)
@@ -140,6 +128,7 @@ if __name__ == "__main__":
     dec = catalog["dec"] * np.pi / 180
     skymap = hp.ang2pix(nside, dec + np.pi / 2, ra, nest=nest)
     z = catalog["z_cmb"]
+    mass = catalog["mass"]
 
     # Build output file
     with h5py.File(output, "a") as f:
@@ -150,6 +139,7 @@ if __name__ == "__main__":
         create_or_overwrite_dataset(f, "dec", data=dec)
         create_or_overwrite_dataset(f, "skymap", data=skymap)
         create_or_overwrite_dataset(f, "z", data=z)
+        create_or_overwrite_dataset(f, "mass", data=mass)
         f.attrs["nside"] = nside
         f.attrs["nest"] = nest
 
