@@ -4,7 +4,7 @@ from astropy.cosmology import FlatLambdaCDM
 from .constants import Om0, eps
 
 
-def normalize(y, x, safe=False):
+def normalize(y, x, safe=True):
     """Return an array normalized with its integral.
 
     Parameters
@@ -14,7 +14,7 @@ def normalize(y, x, safe=False):
     x : array_like
         The axis to perform the integration
     safe : bool, optional
-        Whether to prevent division by zero-norm, by default False
+        Whether to prevent division by zero-norm, by default True
 
     Returns
     -------
@@ -22,9 +22,14 @@ def normalize(y, x, safe=False):
         The normalized array
     """
     norm = simpson(y, x)
-    if safe:
-        norm += eps
-    return y / norm
+    try:
+        res = y / norm
+        return res
+    except ZeroDivisionError as err:
+        if safe:
+            return y / (norm + eps)
+        else:
+            raise err
 
 
 def gaussian(x, mu, sigma):
