@@ -1,12 +1,18 @@
 import numpy as np
-from scipy.special import erf, logsumexp
+from scipy.special import erf
 from scipy.integrate import simpson
-from .utils import flat_cosmology, gaussian, lognormal
+from .utils import flat_cosmology, gaussian, lognormal, merger_rate, normalize
 from .constants import eps
 
 # logger = get_logger()
 
 GW_LIKELIHOOD_DIST_OPTIONS = ("normal", "lognormal")
+
+
+def log_prior(prior, prior_min, prior_max):
+    if np.all(prior >= prior_min) and np.all(prior <= prior_max):
+        return 0.0
+    return -np.inf
 
 
 def combine_posteriors(posterior_matrix, param_arr):
@@ -27,13 +33,9 @@ def combine_posteriors(posterior_matrix, param_arr):
     assert n_param_samples == len(param_arr)
     for i in range(n_events):
         # Normalize posterior for event i
-        norm = simpson(posterior_matrix[i, :], param_arr) + eps
-        posterior_matrix[i, :] /= norm
-
         # Normalize combined posterior with event i
-        combined_posterior *= posterior_matrix[i, :]
-        combined_norm = simpson(combined_posterior, param_arr) + eps
-        combined_posterior /= combined_norm
+        combined_posterior *= normalize(posterior_matrix[i, :], param_arr)
+        combined_posterior = normalize(combined_posterior, param_arr)
 
     # combined_posterior /= simpson(combined_posterior, param_arr)
     # if combined_norm <= 0:
@@ -136,9 +138,19 @@ class DrawnGWInference(HierarchicalBayesianInference):
         p_rate[z_gal <= self.z_draw_max] = 1
         return p_rate / np.sum(p_rate)
 
-    def draw_gw_events(self, z_gal, sigma_constant, n_gw=None, gw_noise=None):
-        # Uniform merger probability on 0 < z < z_draw_max
-        p_rate = self.uniform_p_rate(z_gal)
+    def mass_weighted_p_rate(self, z_gal, mass_gal):
+        p_rate = np.copy(mass_gal)
+        p_rate[z_gal > self.z_draw_max] = 0
+        return p_rate / np.sum(p_rate)
+
+    def p_rate(self, z_gal, mass_gal=None):
+        return self.mass_weighted_p_rate(z_gal, mass_gal) if mass_gal is not None else self.uniform_p_rate(z_gal)
+
+    def draw_gw_events(self, z_gal, sigma_constant, n_gw: int, mass_gal=None):
+        # Merger probability on 0 < z < z_draw_max
+        # Weighted by galaxy mass if mass_gal is provided
+        # Uniform otherwise
+        p_rate = self.p_rate(z_gal, mass_gal)
 
         # Get the "true" gw redshifts
         drawn_gw_zs = np.random.choice(z_gal, n_gw, p=p_rate)
@@ -147,8 +159,7 @@ class DrawnGWInference(HierarchicalBayesianInference):
         drawn_gw_dls = self.luminosity_distance(drawn_gw_zs)
 
         # Compute noise
-        assert n_gw is not None or gw_noise is not None, "Either n_gw or gw_noise_arr must be set"
-        noise = gw_noise if gw_noise is not None else np.random.standard_normal(n_gw)
+        noise = np.random.standard_normal(n_gw)
 
         # Convert true gw luminosity distances into measured values
         # drawn from a normal distribution consistent with the GW likelihood
@@ -165,16 +176,16 @@ class DrawnGWCatalogPerfectRedshiftInference(DrawnGWInference):
     See Eq. (15)
     """
 
-    def selection_effects(self, H0_array, z_gal):
+    def selection_effects(self, H0_array, z_gal, mass_gal=None):
         """
         Return an array with GW likelihood selection effects for each H0 in the array
         """
-        p_rate = self.uniform_p_rate(z_gal)
+        p_rate = self.p_rate(z_gal, mass_gal)
         dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z(H0_array, z_gal)
         detection_prob = self.detection_probability(dl_by_H0_by_gal_matrix)
         return np.dot(detection_prob, p_rate)
 
-    def likelihood(self, gw_dl_array, H0_array, z_gal, n_dir=1):
+    def likelihood(self, gw_dl_array, H0_array, z_gal, n_dir=1, mass_gal=None):
         n_H0 = H0_array.shape[0]
         n_gw = np.sum([len(gw_dl) for gw_dl in gw_dl_array])
         current_gw_idx = 0
@@ -189,8 +200,10 @@ class DrawnGWCatalogPerfectRedshiftInference(DrawnGWInference):
         assert len(z_gal) == len(gw_dl_array)
         assert len(z_gal) == n_dir
         # Loop through directions
-        for gws_in_dir_i, z_gal_i in zip(gw_dl_array, z_gal):
-            p_rate = self.uniform_p_rate(z_gal_i)
+        for i, gws_in_dir_i in enumerate(gw_dl_array):
+            z_gal_i = z_gal[i]
+            mass_gal_i = mass_gal[i] if mass_gal is not None else None
+            p_rate = self.p_rate(z_gal_i, mass_gal_i)
             dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z(H0_array, z_gal_i)
             selection_effects = np.dot(self.detection_probability(dl_by_H0_by_gal_matrix), p_rate)
             # Loop through GWs for a fixed direction
@@ -235,7 +248,7 @@ class DrawnGWCatalogFullInference(DrawnGWInference):
 
         # Sum likelihood * prior on z for over galaxies
         p_cbc = np.sum(p_cbc, axis=0)
-        return p_cbc / simpson(p_cbc, z)
+        return normalize(p_cbc, z)
 
     def gw_likelihood_array(self, dl, H0_array, z, p_rate):
         """
@@ -292,7 +305,12 @@ class DrawnGWMergerRatePriorInference(DrawnGWInference):
     See arxiv:2103.14038
     """
 
-    def p_cbc(self, z):
+    def __init__(self, theta_min, theta_max, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.theta_min = theta_min
+        self.theta_max = theta_max
+
+    def p_cbc(self, z, theta):
         """
         Return the probability of a CBC at z, p_pop(z | H_0)
 
@@ -300,33 +318,40 @@ class DrawnGWMergerRatePriorInference(DrawnGWInference):
         """
         # H0 dependence will cancel out in normalization
         dvc_dz = self.fiducial_cosmology.differential_comoving_volume(z).value
-        sfr = np.power(1 + z, 2.7) / (1.0 + np.power((1 + z) / 2.9, 5.6))
+        sfr = merger_rate(z, *theta)
         # 1 + z factor in denominator accounts for the transformation from
         # detector frame time to source frame time
         p_cbc = dvc_dz * sfr / (1 + z)
-        return p_cbc / simpson(p_cbc, z)
+        return normalize(p_cbc, z)
 
-    def gw_likelihood_array(self, dl, H0_array, z):
+    def gw_likelihood_array(self, dl, H0, z, theta):
         """
-        Return the sum over galaxies of p(d_L | d_L(H0, z)) for each H0
+        Return the sum over galaxies of p(d_L | d_L(H0, z)) for given H0
         """
-        p_rate = self.p_cbc(z)
-        dl_by_H0_by_z_matrix = self.dl_from_H0_array_and_z(H0_array, z)
-        integrand = self.gw_likelihood(dl, dl_by_H0_by_z_matrix) * p_rate
+        p_rate = self.p_cbc(z, theta)
+        true_dl = self.luminosity_distance(z) * (self.H0) / H0
+        integrand = self.gw_likelihood(dl, true_dl) * p_rate
         return simpson(integrand, z)
 
-    def selection_effects(self, H0_array, z):
+    def selection_effects(self, H0, z, theta):
         """
         Return an array with GW likelihood selection effects for each H0 in the array
         """
-        p_rate = self.p_cbc(z)
-        dl_by_H0_by_z_matrix = self.dl_from_H0_array_and_z(H0_array, z)
-        detection_prob = self.detection_probability(dl_by_H0_by_z_matrix)
+        p_rate = self.p_cbc(z, theta)
+        true_dl = self.luminosity_distance(z) * (self.H0) / H0
+        detection_prob = self.detection_probability(true_dl)
         return simpson(detection_prob * p_rate, z)
 
-    def likelihood(self, gw_dl_array, H0_array, z):
+    def log_likelihood(self, gw_dl_array, H0, z, theta):
         gw_dl_flatenned_array = np.concatenate(gw_dl_array)
-        likelihood_matrix = np.array([self.gw_likelihood_array(gw_dl, H0_array, z) for gw_dl in gw_dl_flatenned_array])
-        selection_effects = self.selection_effects(H0_array, z)
-        likelihood_matrix /= selection_effects
-        return combine_posteriors(likelihood_matrix, H0_array)
+        likelihood_array = np.array([self.gw_likelihood_array(gw_dl, H0, z, theta) for gw_dl in gw_dl_flatenned_array])
+        selection_effects = self.selection_effects(H0, z, theta)
+        likelihood_array /= selection_effects
+        return np.sum(np.log(likelihood_array))
+
+    def log_posterior(self, params, gw_dl_array, z):
+        H0, theta = params
+        lp = log_prior(theta, self.theta_min, self.theta_max)
+        if not np.isfinite(lp):
+            return -np.inf
+        return self.log_likelihood(gw_dl_array, H0, z, theta)
