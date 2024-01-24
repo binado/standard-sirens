@@ -83,38 +83,65 @@ def sample_from_func(n, func, x, *args, **kwargs):
 
 
 class EventGenerator:
-    def __init__(self, H0, z_draw_max, dl_th) -> None:
-        self.cosmology = flat_cosmology(H0)
+    def __init__(self, z_draw_max=1.4, dl_th=1550) -> None:
         self.z_draw_max = z_draw_max
         self.dl_th = dl_th
         self.drawn_redshifts = None
 
-    def luminosity_distance(self, cosmology, z):
-        return cosmology.luminosity_distance(z).to("Mpc").value
+    def uniform_p_rate(self, z):
+        p_rate = np.zeros_like(z)
+        p_rate[z <= self.z_draw_max] = 1
+        return p_rate / np.sum(p_rate)
 
-    def uniform_p_rate(self, z_gal, z_draw_max):
-        # Uniform merger probability on 0 < z < z_draw_max
-        p_rate = np.zeros_like(z_gal)
-        p_rate[z_gal <= z_draw_max] = 1
-        p_rate /= np.sum(p_rate)
-        return p_rate
+    def mass_weighted_p_rate(self, z, mass_gal):
+        p_rate = np.copy(mass_gal)
+        p_rate[z > self.z_draw_max] = 0
+        return p_rate / np.sum(p_rate)
+
+    def p_rate(self, z_gal, mass_gal=None):
+        return self.mass_weighted_p_rate(z_gal, mass_gal) if mass_gal is not None else self.uniform_p_rate(z_gal)
 
     def draw_redshifts(self, z_gal, n):
-        p_rate = self.uniform_p_rate(z_gal, self.z_draw_max)
+        p_rate = self.uniform_p_rate(z_gal)
         self.drawn_redshifts = np.random.choice(z_gal, n, p=p_rate)
 
-    def from_catalog(self, cosmology, sigma_dl, noise=None):
-        drawn_gw_zs = self.drawn_redshifts
-        if drawn_gw_zs is None:
-            raise ValueError("drawn_redshifts method must be called before.")
+    def from_redshifts(self, cosmology, z, sigma_dl):
+        n = len(z)
 
         # Convert them into "true" gw luminosity distances using a fiducial cosmology
-        drawn_gw_dls = self.luminosity_distance(cosmology, drawn_gw_zs)
-        _noise = noise if noise is not None else np.random.standard_normal(len(drawn_gw_dls))
+        true_dl = luminosity_distance(cosmology, z)
 
         # Convert true gw luminosity distances into measured values
         # drawn from a normal distribution consistent with the GW likelihood
-        sigma = drawn_gw_dls * sigma_dl
-        observed_gw_dls = _noise * sigma + drawn_gw_dls
+        sigma = true_dl * sigma_dl
+        observed_dl = true_dl + sigma * np.random.standard_normal(n)
         # Filter events whose dL exceeds threshold
-        return observed_gw_dls[observed_gw_dls < self.dl_th]
+        return observed_dl[observed_dl < self.dl_th]
+
+    def from_catalog(self, cosmology, z_gal, sigma_dl, n_gw: int, mass_gal=None):
+        if mass_gal is not None:
+            assert len(z_gal) == len(mass_gal), "z_gal and mass_gal should have the same shape"
+
+        try:
+            _ = len(z_gal[0])
+            # z_gal is a list of arrays of galaxy redshifts in different sky direction
+            events = []
+            for i, z_i in enumerate(z_gal):
+                mass_i = mass_gal[i] if mass_gal is not None else None
+                p_rate = self.p_rate(z_i, mass_i)
+                drawn_gw_zs = np.random.choice(z_i, n_gw, p=p_rate)
+                events.append(self.from_redshifts(cosmology, drawn_gw_zs, sigma_dl))
+        except TypeError:
+            # z_gal is an array of galaxy redshifts in one sky direction
+            # Merger probability on 0 < z < z_draw_max
+            # Weighted by galaxy mass if mass_gal is provided
+            # Uniform otherwise
+            p_rate = self.p_rate(z_gal, mass_gal)
+
+            # Get the "true" gw redshifts
+            drawn_gw_zs = np.random.choice(z_gal, n_gw, p=p_rate)
+
+            # Get the measured redshifts
+            events = self.from_redshifts(cosmology, drawn_gw_zs, sigma_dl)
+
+        return events
