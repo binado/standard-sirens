@@ -4,7 +4,7 @@ from astropy.cosmology import FlatLambdaCDM
 from .constants import Om0, eps
 
 
-def normalize(y, x, safe=True):
+def normalize(y, x, safe=True, min_norm=eps):
     """Return an array normalized with its integral.
 
     Parameters
@@ -15,11 +15,17 @@ def normalize(y, x, safe=True):
         The axis to perform the integration
     safe : bool, optional
         Whether to prevent division by zero-norm, by default True
+    min_norm : float, optional
+        Minimum norm in case of save division, by default 1e-10
 
     Returns
     -------
     array_like
         The normalized array
+
+    Raises
+    ------
+    ZeroDivisionEror
     """
     norm = simpson(y, x)
     try:
@@ -27,7 +33,7 @@ def normalize(y, x, safe=True):
         return res
     except ZeroDivisionError as err:
         if safe:
-            return y / (norm + eps)
+            return y / (norm + min_norm)
         else:
             raise err
 
@@ -42,6 +48,10 @@ def lognormal(x, mu, sigma):
 
 def flat_cosmology(H0):
     return FlatLambdaCDM(H0, Om0)
+
+
+def luminosity_distance(cosmology, z):
+    return cosmology.luminosity_distance(z).to("Mpc").value
 
 
 def merger_rate(z, alpha, beta, c):
