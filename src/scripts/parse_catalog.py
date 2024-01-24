@@ -7,6 +7,8 @@ from pathlib import Path
 import os
 from tqdm import tqdm
 
+from ..utils.hdf5 import create_or_overwrite_dataset, write_to_file
+
 
 dirname = os.getcwd()
 
@@ -74,19 +76,6 @@ def filter_chunk(df):
     return df
 
 
-def create_or_overwrite_dataset(file: h5py.File, dataset, data):
-    """
-    Overwrite existing dataset with new data for a hdf5 file.
-    If such dataset does not exist, create one and populate it
-    """
-    try:
-        # See https://stackoverflow.com/a/22925117
-        old_data = file[dataset]
-        old_data[...] = data
-    except KeyError:
-        file.create_dataset(dataset, data=data)
-
-
 if __name__ == "__main__":
     # Parse command line args
     args = argument_parser.parse_args()
@@ -131,16 +120,6 @@ if __name__ == "__main__":
     mass = catalog["mass"]
 
     # Build output file
-    with h5py.File(output, "a") as f:
-        if verbose:
-            print("Creating output datasets...")
-
-        create_or_overwrite_dataset(f, "ra", data=ra)
-        create_or_overwrite_dataset(f, "dec", data=dec)
-        create_or_overwrite_dataset(f, "skymap", data=skymap)
-        create_or_overwrite_dataset(f, "z", data=z)
-        create_or_overwrite_dataset(f, "mass", data=mass)
-        f.attrs["nside"] = nside
-        f.attrs["nest"] = nest
+    write_to_file(output, ra=ra, dec=dec, skymap=skymap, z=z, mass=mass, attrs={"nside": nside, "nest": nest})
 
     print("Done!")
