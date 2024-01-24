@@ -5,7 +5,8 @@ This repository hosts the manuscript _Cosmology with standard sirens_, written a
 You will also find Jupyter notebooks which complement the discussion in the main text:
 
 - [Visualizing the galaxy catalog](./src/visualize_catalog.ipynb)
-- [Inferring $H_0$ with standard sirens](./src/inferring_H0_with_standard_sirens.ipynb)
+- [Inferring cosmological parameters with standard sirens and galaxy catalogs](./src/inference_with_galaxy_catalogs.ipynb)
+- [Inferring cosmological and BBH merger rate parameters with standard sirens](./src/inference_with_merger_rate_prior.ipynb)
 - [Inference bias analysis with p-p plots](./src/pp_analysis.ipynb)
 
 ## Installation
@@ -15,3 +16,13 @@ With conda:
 ```bash
 conda create --name <env> -f requirements.txt
 ```
+
+## Running scripts
+
+To run scripts from the `scripts` folder, use the following command at the main directory:
+
+```bash
+python -m src.scripts.foo <args>
+```
+
+You may use the flag `-h` for instructions on the commands and their accepted arguments.
