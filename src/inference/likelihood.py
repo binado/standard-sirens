@@ -58,14 +58,14 @@ class DrawnGWInference(HierarchicalBayesianInference):
 
     def __init__(
         self,
-        sigma_constant=0.1,
+        sigma_dl=0.1,
         gw_likelihood_dist="normal",
         fiducial_H0=70,
         z_draw_max=1.4,
         dl_th=1550,
         max_redshift_err=0.015,
     ) -> None:
-        self.sigma_constant = sigma_constant
+        self.sigma_dl = sigma_dl
         self.fiducial_cosmology = flat_cosmology(fiducial_H0)
         self.dl_th = dl_th
         self.z_draw_max = z_draw_max
@@ -108,7 +108,7 @@ class DrawnGWInference(HierarchicalBayesianInference):
         See Eq. (21)
         """
         is_normal = self.gw_likelihood_dist == "normal"
-        sigma = self.sigma_constant * true_dl if is_normal else self.sigma_constant
+        sigma = self.sigma_dl * true_dl if is_normal else self.sigma_dl
         dist = gaussian if is_normal else lognormal
         return dist(dl, true_dl, sigma)
 
@@ -118,7 +118,7 @@ class DrawnGWInference(HierarchicalBayesianInference):
 
         See Eq. (22)
         """
-        sigma = self.sigma_constant * dl
+        sigma = self.sigma_dl * dl
         x = (self.dl_th - dl) / sigma
         return 0.5 * (1.0 + erf(x / np.sqrt(2)))
 
@@ -146,30 +146,8 @@ class DrawnGWInference(HierarchicalBayesianInference):
     def p_rate(self, z_gal, mass_gal=None):
         return self.mass_weighted_p_rate(z_gal, mass_gal) if mass_gal is not None else self.uniform_p_rate(z_gal)
 
-    def draw_gw_events(self, z_gal, sigma_constant, n_gw: int, mass_gal=None):
-        # Merger probability on 0 < z < z_draw_max
-        # Weighted by galaxy mass if mass_gal is provided
-        # Uniform otherwise
-        p_rate = self.p_rate(z_gal, mass_gal)
 
-        # Get the "true" gw redshifts
-        drawn_gw_zs = np.random.choice(z_gal, n_gw, p=p_rate)
-
-        # Convert them into "true" gw luminosity distances using a fiducial cosmology
-        drawn_gw_dls = self.luminosity_distance(drawn_gw_zs)
-
-        # Compute noise
-        noise = np.random.standard_normal(n_gw)
-
-        # Convert true gw luminosity distances into measured values
-        # drawn from a normal distribution consistent with the GW likelihood
-        sigma_dl = drawn_gw_dls * sigma_constant
-        observed_gw_dls = noise * sigma_dl + drawn_gw_dls
-        # Filter events whose dL exceeds threshold
-        return observed_gw_dls[observed_gw_dls < self.dl_th]
-
-
-class DrawnGWCatalogPerfectRedshiftInference(DrawnGWInference):
+class DrawnGWCatalogSpeczInference(DrawnGWInference):
     """
     Implements likelihood model in the limit of perfect galaxy redshift measurements
 
@@ -217,7 +195,7 @@ class DrawnGWCatalogPerfectRedshiftInference(DrawnGWInference):
         return combine_posteriors(likelihood_matrix, H0_array)
 
 
-class DrawnGWCatalogFullInference(DrawnGWInference):
+class DrawnGWCatalogPhotozInference(DrawnGWInference):
     """
     Implements full likelihood model
 
