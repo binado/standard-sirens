@@ -286,8 +286,10 @@ class DrawnGWMergerRatePriorInference(DrawnGWInference):
 
     def __init__(self, H0_min, H0_max, theta_min, theta_max, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.param_min = [H0_min, *theta_min]
-        self.param_max = [H0_max, *theta_max]
+        self.param_min = np.array([H0_min, *theta_min])
+        self.param_max = np.array([H0_max, *theta_max])
+        self.dvc_dz_over_1pz = None
+        self.fiducial_dl_times_fiducial_H0 = None
 
     def p_cbc(self, z, theta):
         """
@@ -295,12 +297,12 @@ class DrawnGWMergerRatePriorInference(DrawnGWInference):
 
         Uses Madau-Dickinson SFR (arxiv:1403.0007)
         """
+        assert self.dvc_dz_over_1pz is not None, "pre_compute method must be called first"
         # H0 dependence will cancel out in normalization
-        dvc_dz = self.fiducial_cosmology.differential_comoving_volume(z).value
         sfr = merger_rate(z, *theta)
         # 1 + z factor in denominator accounts for the transformation from
         # detector frame time to source frame time
-        p_cbc = dvc_dz * sfr / (1 + z)
+        p_cbc = self.dvc_dz_over_1pz * sfr
         return normalize(p_cbc, z)
 
     def gw_likelihood_array(self, dl, true_dl, p_rate, z):
@@ -317,16 +319,25 @@ class DrawnGWMergerRatePriorInference(DrawnGWInference):
         detection_prob = self.detection_probability(true_dl)
         return simpson(detection_prob * p_rate, z)
 
+    def pre_compute(self, z):
+        self.dvc_dz_over_1pz = self.fiducial_cosmology.differential_comoving_volume(z).value / (1 + z)
+        self.fiducial_dl_times_fiducial_H0 = self.luminosity_distance(z) * self.H0
+
+    def log_prior(self, params):
+        return log_prior(params, self.param_min, self.param_max)
+
     def log_likelihood(self, gw_dl_array, H0, z, theta):
         p_rate = self.p_cbc(z, theta)
-        true_dl = self.luminosity_distance(z) * (self.H0) / H0
+        # dl contains a factor of 1/H0
+        assert self.fiducial_dl_times_fiducial_H0 is not None, "pre_compute method must be called first"
+        true_dl = self.fiducial_dl_times_fiducial_H0 / H0
         likelihood_array = np.array([self.gw_likelihood_array(gw_dl, true_dl, p_rate, z) for gw_dl in gw_dl_array])
         selection_effects = self.selection_effects(true_dl, p_rate, z)
         return np.sum(np.log(likelihood_array) - np.log(selection_effects))
 
     def log_posterior(self, params, gw_dl_array, z):
         H0, *theta = params
-        lp = log_prior(params, self.param_min, self.param_max)
+        lp = self.log_prior(params)
         if not np.isfinite(lp):
             return -np.inf
         return self.log_likelihood(gw_dl_array, H0, z, theta)
