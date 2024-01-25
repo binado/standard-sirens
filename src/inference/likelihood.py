@@ -2,9 +2,6 @@ import numpy as np
 from scipy.special import erf
 from scipy.integrate import simpson
 from .utils import flat_cosmology, gaussian, lognormal, merger_rate, normalize
-from .constants import eps
-
-# logger = get_logger()
 
 GW_LIKELIHOOD_DIST_OPTIONS = ("normal", "lognormal")
 
