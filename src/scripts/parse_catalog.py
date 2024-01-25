@@ -1,13 +1,12 @@
 import pandas as pd
 import numpy as np
 import healpy as hp
-import h5py
 import argparse
 from pathlib import Path
 import os
 from tqdm import tqdm
 
-from ..utils.hdf5 import create_or_overwrite_dataset, write_to_file
+from ..utils.hdf5 import write_to_file
 
 
 dirname = os.getcwd()

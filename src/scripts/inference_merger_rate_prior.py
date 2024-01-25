@@ -1,14 +1,15 @@
-import matplotlib.pyplot as plt
+import os
+import logging
 import argparse
 from pathlib import Path
-import os
-from tqdm import tqdm
+
 import numpy as np
 from emcee import EnsembleSampler
-from corner import corner
+from emcee.backends import HDFBackend
 
 from ..inference.likelihood import DrawnGWMergerRatePriorInference
 from ..inference.utils import merger_rate, sample_from_func, EventGenerator
+from ..utils.logger import logging_config
 
 dirname = os.getcwd()
 
@@ -17,44 +18,75 @@ theta_min, theta_max = [0.0, 0.0, 0.0], [10.0, 10.0, 10.0]
 fiducial_H0 = 70
 md_theta = [2.7, 5.6, 2.9]
 H0_min, H0_max = 20, 140
-
 n_events = 200
+sigma_dl = 0.1
+n_walkers = 32
+n_steps = 1000
+
+logger_output_file = "logs/scripts.log"
+output_filename = "output.hdf5"
+output_group = "mcmc"
 
 # Adding CLI arguments
 argument_parser = argparse.ArgumentParser(
     prog="inference_merger_rate_prior", description="Run bayesian inference on cosmological and merger rate parameters."
 )
-# argument_parser.add_argument("filename", type=Path, help="Path to parsed data in .hdf5 format")
-argument_parser.add_argument("-o", "--output", type=Path, default="output.hdf5", help="Path to output data")
+argument_parser.add_argument("-o", "--output", type=Path, default=output_filename, help="Path to output the MCMC data")
+argument_parser.add_argument("-g", "--group", type=str, default=output_group, help="hdf5 file group to store MCMC data")
 argument_parser.add_argument(
     "--H0", type=np.float64, default=fiducial_H0, help="Fiducial value of H0 to generate injections"
 )
-argument_parser.add_argument("-n", "--nevents", type=int, default=n_events, help="Number of injections to simulate")
-argument_parser.add_argument("-v", "--verbose", action="store_true")
+argument_parser.add_argument(
+    "--sigmadl", type=np.float64, default=sigma_dl, help="Luminosity distance uncertainty multiplier"
+)
+argument_parser.add_argument("--nwalkers", type=int, default=n_walkers, help="Number of walkers in ensemble sampler")
+argument_parser.add_argument("-n", "--nsteps", type=int, default=n_steps, help="Number of MCMC steps")
+argument_parser.add_argument("-e", "--events", type=int, default=n_events, help="Number of injections to simulate")
+argument_parser.add_argument("-s", "--silent", action="store_true", default=False)
 
 if __name__ == "__main__":
     args = argument_parser.parse_args()
-    verbose = args.verbose
+    output_filename = args.output
+    output_group = args.group
+    verbose = not args.silent
     fiducial_H0 = args.H0
-    n_events = args.nevents
+    sigma_dl = args.sigmadl
+    n_events = args.events
+    n_walkers = args.nwalkers
+    n_steps = args.nsteps
     fiducial = [fiducial_H0, *md_theta]
 
-    full_z = np.linspace(0, 20, 1000)
-    event_redshifts = sample_from_func(100 * n_events, merger_rate, full_z, *md_theta)
-    inference = DrawnGWMergerRatePriorInference(H0_min, H0_max, theta_min, theta_max, fiducial_H0=fiducial_H0)
-    cosmology = inference.fiducial_cosmology
-    events = EventGenerator(fiducial_H0).from_redshifts(cosmology, event_redshifts, sigma_dl=0.1)
+    logging_config(logger_output_file)
     if verbose:
-        print(f"{len(events)} events were generated")
+        logging.info(
+            "Started inference run with H0=%s, sigma_dl=%s with %s injections", fiducial_H0, sigma_dl, n_events
+        )
 
-    initial = fiducial + np.random.randn(32, len(fiducial))
+    full_z = np.linspace(1e-4, 20, 1000)
+    event_redshifts = sample_from_func(100 * n_events, merger_rate, full_z, *md_theta)
+    inference = DrawnGWMergerRatePriorInference(
+        H0_min, H0_max, theta_min, theta_max, fiducial_H0=fiducial_H0, sigma_dl=sigma_dl
+    )
+    inference.pre_compute(full_z)
+    cosmology = inference.fiducial_cosmology
+    events = EventGenerator(fiducial_H0).from_redshifts(cosmology, event_redshifts, sigma_dl)
+    if verbose:
+        logging.info("%s events were generated", len(events))
+
+    initial = fiducial + 1e-1 * (inference.param_max - inference.param_min) * np.random.randn(32, len(fiducial))
+    assert np.all(
+        np.isfinite([inference.log_prior(walker) for walker in initial])
+    ), "Initial state not within allowed prior range"
     nwalkers, ndim = initial.shape
 
-    sampler = EnsembleSampler(nwalkers, ndim, inference.log_posterior, args=[events, full_z])
+    backend = HDFBackend(output_filename, name=output_group)
+    backend.reset(nwalkers, ndim)
+    sampler = EnsembleSampler(nwalkers, ndim, inference.log_posterior, args=[events, full_z], backend=backend)
     if verbose:
-        print("Starting MCMC")
-    sampler.run_mcmc(initial, 30, progress=True)
+        logging.info("Starting MCMC")
+    sampler.run_mcmc(initial, n_steps, progress=verbose, store=True)
 
-    thin = round(np.max(sampler.get_autocorr_time()) / 2)
-    samples = sampler.get_chain(discard=10, thin=2, flat=True)
-    fig = corner(samples, labels=[r"$H_0$", r"$\alpha$", r"$\beta$", r"$c$"], truths=fiducial)
+    # autocorrelation_time = sampler.get_autocorr_time(quiet=True)
+    # if verbose:
+    #     logging.info("Finished MCMC. Samples saved to %s file", output_filename)
+    #     logging.info("Autocorrelation time: %s", autocorrelation_time)
