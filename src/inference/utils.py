@@ -93,13 +93,13 @@ class EventGenerator:
         p_rate[z <= self.z_draw_max] = 1
         return p_rate / np.sum(p_rate)
 
-    def mass_weighted_p_rate(self, z, mass_gal):
-        p_rate = np.copy(mass_gal)
+    def mass_weighted_p_rate(self, z, weights):
+        p_rate = np.copy(weights)
         p_rate[z > self.z_draw_max] = 0
         return p_rate / np.sum(p_rate)
 
-    def p_rate(self, z_gal, mass_gal=None):
-        return self.mass_weighted_p_rate(z_gal, mass_gal) if mass_gal is not None else self.uniform_p_rate(z_gal)
+    def p_rate(self, z_gal, weights=None):
+        return self.mass_weighted_p_rate(z_gal, weights) if weights is not None else self.uniform_p_rate(z_gal)
 
     def draw_redshifts(self, z_gal, n):
         p_rate = self.uniform_p_rate(z_gal)
@@ -118,25 +118,25 @@ class EventGenerator:
         # Filter events whose dL exceeds threshold
         return observed_dl[observed_dl < self.dl_th]
 
-    def from_catalog(self, cosmology, z_gal, sigma_dl, n_gw: int, mass_gal=None):
-        if mass_gal is not None:
-            assert len(z_gal) == len(mass_gal), "z_gal and mass_gal should have the same shape"
+    def from_catalog(self, cosmology, z_gal, sigma_dl, n_gw: int, weights=None):
+        if weights is not None:
+            assert len(z_gal) == len(weights), "z_gal and weights should have the same shape"
 
         try:
             _ = len(z_gal[0])
             # z_gal is a list of arrays of galaxy redshifts in different sky direction
             events = []
             for i, z_i in enumerate(z_gal):
-                mass_i = mass_gal[i] if mass_gal is not None else None
+                mass_i = weights[i] if weights is not None else None
                 p_rate = self.p_rate(z_i, mass_i)
                 drawn_gw_zs = np.random.choice(z_i, n_gw, p=p_rate)
                 events.append(self.from_redshifts(cosmology, drawn_gw_zs, sigma_dl))
         except TypeError:
             # z_gal is an array of galaxy redshifts in one sky direction
             # Merger probability on 0 < z < z_draw_max
-            # Weighted by galaxy mass if mass_gal is provided
+            # Weighted by galaxy mass if weights is provided
             # Uniform otherwise
-            p_rate = self.p_rate(z_gal, mass_gal)
+            p_rate = self.p_rate(z_gal, weights)
 
             # Get the "true" gw redshifts
             drawn_gw_zs = np.random.choice(z_gal, n_gw, p=p_rate)

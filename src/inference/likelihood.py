@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.special import erf
 from scipy.integrate import simpson
-from .utils import flat_cosmology, gaussian, lognormal, merger_rate, normalize
+from .utils import flat_cosmology, gaussian, lognormal, merger_rate, normalize, luminosity_distance
 
 GW_LIKELIHOOD_DIST_OPTIONS = ("normal", "lognormal")
 
@@ -82,7 +82,7 @@ class DrawnGWInference(HierarchicalBayesianInference):
         Return value of luminosity distance at redshift z in Mpc
         for a flat LambdaCDM cosmology with fiducial H0
         """
-        return self.fiducial_cosmology.luminosity_distance(z).to("Mpc").value
+        return luminosity_distance(self.fiducial_cosmology, z)
 
     def redshift_sigma(self, z):
         return np.minimum(0.013 * (1 + z) ** 3, self.max_redshift_err)
@@ -95,12 +95,9 @@ class DrawnGWInference(HierarchicalBayesianInference):
         """
         return gaussian(z, z_gal, self.redshift_sigma(z))
 
-    def draw_from_redshift_likelihood(self, z_true):
-        return z_true + self.redshift_sigma(z_true) * np.random.standard_normal(len(z_true))
-
     def gw_likelihood(self, dl, true_dl):
         """
-        Compute gw likelihood L(dl_gw | z, H0)
+        Compute single-event gw likelihood L(dl_gw | z, H0)
 
         See Eq. (21)
         """
@@ -135,13 +132,13 @@ class DrawnGWInference(HierarchicalBayesianInference):
         p_rate[z_gal <= self.z_draw_max] = 1
         return p_rate / np.sum(p_rate)
 
-    def mass_weighted_p_rate(self, z_gal, mass_gal):
-        p_rate = np.copy(mass_gal)
+    def weighted_p_rate(self, z_gal, weights):
+        p_rate = np.copy(weights)
         p_rate[z_gal > self.z_draw_max] = 0
         return p_rate / np.sum(p_rate)
 
-    def p_rate(self, z_gal, mass_gal=None):
-        return self.mass_weighted_p_rate(z_gal, mass_gal) if mass_gal is not None else self.uniform_p_rate(z_gal)
+    def p_rate(self, z_gal, weights=None):
+        return self.weighted_p_rate(z_gal, weights) if weights is not None else self.uniform_p_rate(z_gal)
 
 
 class DrawnGWCatalogSpeczInference(DrawnGWInference):
@@ -151,16 +148,16 @@ class DrawnGWCatalogSpeczInference(DrawnGWInference):
     See Eq. (15)
     """
 
-    def selection_effects(self, H0_array, z_gal, mass_gal=None):
+    def selection_effects(self, H0_array, z_gal, weights=None):
         """
         Return an array with GW likelihood selection effects for each H0 in the array
         """
-        p_rate = self.p_rate(z_gal, mass_gal)
+        p_rate = self.p_rate(z_gal, weights)
         dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z(H0_array, z_gal)
         detection_prob = self.detection_probability(dl_by_H0_by_gal_matrix)
         return np.dot(detection_prob, p_rate)
 
-    def likelihood(self, gw_dl_array, H0_array, z_gal, n_dir=1, mass_gal=None):
+    def likelihood(self, gw_dl_array, H0_array, z_gal, n_dir=1, weights=None):
         n_H0 = H0_array.shape[0]
         n_gw = np.sum([len(gw_dl) for gw_dl in gw_dl_array])
         current_gw_idx = 0
@@ -177,8 +174,8 @@ class DrawnGWCatalogSpeczInference(DrawnGWInference):
         # Loop through directions
         for i, gws_in_dir_i in enumerate(gw_dl_array):
             z_gal_i = z_gal[i]
-            mass_gal_i = mass_gal[i] if mass_gal is not None else None
-            p_rate = self.p_rate(z_gal_i, mass_gal_i)
+            weights_i = weights[i] if weights is not None else None
+            p_rate = self.p_rate(z_gal_i, weights_i)
             dl_by_H0_by_gal_matrix = self.dl_from_H0_array_and_z(H0_array, z_gal_i)
             selection_effects = np.dot(self.detection_probability(dl_by_H0_by_gal_matrix), p_rate)
             # Loop through GWs for a fixed direction
@@ -199,7 +196,7 @@ class DrawnGWCatalogPhotozInference(DrawnGWInference):
     See Eq. (29)
     """
 
-    def p_cbc(self, z, z_gal, mass_gal=None):
+    def p_cbc(self, z, z_gal, weights=None):
         """
         Return \Sum_i p(z_gal_i | z) p_bg (z) p_rate (z)
 
@@ -215,8 +212,8 @@ class DrawnGWCatalogPhotozInference(DrawnGWInference):
         # This is an n_gal x n_z matrix
         p_cbc = z_gal_by_z_likelihood * p_bg * p_rate
 
-        if mass_gal is not None:
-            p_cbc *= mass_gal.reshape(-1, 1)
+        if weights is not None:
+            p_cbc *= weights.reshape(-1, 1)
 
         # Normalize each z_gal entry
         norm = simpson(p_cbc, z)
@@ -225,7 +222,7 @@ class DrawnGWCatalogPhotozInference(DrawnGWInference):
         p_cbc = p_cbc[galaxies_in_range] / norm[galaxies_in_range].reshape(-1, 1)
 
         # Sum likelihood * prior on z for over galaxies
-        p_cbc = np.dot(p_cbc.T, mass_gal[galaxies_in_range]).T if mass_gal is not None else np.sum(p_cbc, axis=0)
+        p_cbc = np.dot(weights[galaxies_in_range], p_cbc) if weights is not None else np.sum(p_cbc, axis=0)
         return normalize(p_cbc, z)
 
     def gw_likelihood_array(self, dl, H0_array, z, p_rate):
@@ -244,7 +241,7 @@ class DrawnGWCatalogPhotozInference(DrawnGWInference):
         detection_prob = self.detection_probability(dl_by_H0_by_z_matrix)
         return simpson(detection_prob * p_rate, z)
 
-    def likelihood(self, gw_dl_array, H0_array, z, z_gal, n_dir=1, mass_gal=None):
+    def likelihood(self, gw_dl_array, H0_array, z, z_gal, n_dir=1, weights=None):
         n_H0 = H0_array.shape[0]
         n_gw = np.sum([len(gw_dl) for gw_dl in gw_dl_array])
         current_gw_idx = 0
@@ -256,8 +253,8 @@ class DrawnGWCatalogPhotozInference(DrawnGWInference):
             assert len(z_gal) == n_dir
             # Loop through directions
             for i, (gws_in_dir_i, z_gal_i) in enumerate(zip(gw_dl_array, z_gal)):
-                mass_gal_i = mass_gal[i] if mass_gal is not None else None
-                p_rate = self.p_cbc(z, z_gal_i, mass_gal_i)
+                weights_i = weights[i] if weights is not None else None
+                p_rate = self.p_cbc(z, z_gal_i, weights_i)
                 selection_effects = self.selection_effects(H0_array, z, p_rate)
                 # Loop through GWs for a fixed direction
                 for gw_dl_j in gws_in_dir_i:
@@ -268,7 +265,7 @@ class DrawnGWCatalogPhotozInference(DrawnGWInference):
             assert current_gw_idx == n_gw
         # GWs share the same set of host galaxies
         else:
-            p_rate = self.p_cbc(z, z_gal, mass_gal)
+            p_rate = self.p_cbc(z, z_gal, weights)
             selection_effects = self.selection_effects(H0_array, z, p_rate)
             for i, gw_dl in enumerate(gw_dl_array):
                 likelihood_matrix[i, :] = self.gw_likelihood_array(gw_dl, H0_array, z, p_rate) / selection_effects
