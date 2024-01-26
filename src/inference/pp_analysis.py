@@ -45,7 +45,9 @@ def save_data(filename, dataset, data):
         f.create_dataset(dataset, data=data)
 
 
-def run_pp_analysis_specz_inference(n_sim, H0_array, sigma_dl, z_gal, n_gw_per_dir, mass_gal=None, desc=None):
+def pp_analysis_specz(
+    n_sim, H0_array, sigma_dl, z_gal, n_gw_per_dir, event_weights=None, inference_weights=None, desc=None
+):
     true_H0s, true_H0_indexes = draw_parameters(H0_array, n_sim)
     generator = EventGenerator()
     n_dir = len(z_gal)
@@ -53,8 +55,8 @@ def run_pp_analysis_specz_inference(n_sim, H0_array, sigma_dl, z_gal, n_gw_per_d
 
     for i, H0 in tqdm(enumerate(true_H0s), total=n_sim, desc=desc):
         inference = DrawnGWCatalogSpeczInference(fiducial_H0=H0, sigma_dl=sigma_dl)
-        events = generator.from_catalog(inference.fiducial_cosmology, z_gal, sigma_dl, n_gw_per_dir, mass_gal)
-        posterior, _ = inference.likelihood(events, H0_array, z_gal, n_dir=n_dir, mass_gal=mass_gal)
+        events = generator.from_catalog(inference.fiducial_cosmology, z_gal, sigma_dl, n_gw_per_dir, event_weights)
+        posterior, _ = inference.likelihood(events, H0_array, z_gal, n_dir=n_dir, weights=inference_weights)
         cdf = cumulative_trapezoid(posterior, H0_array)
         assert np.all(cdf >= 0), "Negative cdf"
         true_H0_index = min(true_H0_indexes[i], len(cdf) - 1)
@@ -64,7 +66,9 @@ def run_pp_analysis_specz_inference(n_sim, H0_array, sigma_dl, z_gal, n_gw_per_d
     return ci_array, counts, bins
 
 
-def run_pp_analysis_photoz_inference(n_sim, H0_array, sigma_dl, z, z_gal, n_gw_per_dir, mass_gal=None, desc=None):
+def pp_analysis_photoz(
+    n_sim, H0_array, sigma_dl, z, z_gal, n_gw_per_dir, event_weights=None, inference_weights=None, desc=None
+):
     true_H0s, true_H0_indexes = draw_parameters(H0_array, n_sim)
     generator = EventGenerator()
     n_dir = len(z_gal)
@@ -72,8 +76,8 @@ def run_pp_analysis_photoz_inference(n_sim, H0_array, sigma_dl, z, z_gal, n_gw_p
 
     for i, H0 in tqdm(enumerate(true_H0s), total=n_sim, desc=desc):
         inference = DrawnGWCatalogPhotozInference(fiducial_H0=H0, sigma_dl=sigma_dl)
-        events = generator.from_catalog(inference.fiducial_cosmology, z_gal, sigma_dl, n_gw_per_dir, mass_gal)
-        posterior, _ = inference.likelihood(events, H0_array, z, z_gal, n_dir=n_dir, mass_gal=mass_gal)
+        events = generator.from_catalog(inference.fiducial_cosmology, z_gal, sigma_dl, n_gw_per_dir, event_weights)
+        posterior, _ = inference.likelihood(events, H0_array, z, z_gal, n_dir=n_dir, weights=inference_weights)
         cdf = cumulative_trapezoid(posterior, H0_array)
         assert np.all(cdf >= 0), "Negative cdf"
         true_H0_index = min(true_H0_indexes[i], len(cdf) - 1)
