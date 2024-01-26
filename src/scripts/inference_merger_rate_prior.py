@@ -14,7 +14,8 @@ from ..utils.logger import logging_config
 dirname = os.getcwd()
 
 # Default arguments
-theta_min, theta_max = [0.0, 0.0, 0.0], [10.0, 10.0, 10.0]
+# theta = {alpha, beta, c}
+theta_min, theta_max = [0.0, 0.0, 0.1], [10.0, 10.0, 10.0]
 fiducial_H0 = 70
 md_theta = [2.7, 5.6, 2.9]
 H0_min, H0_max = 20, 140
