@@ -6,7 +6,7 @@ You will also find Jupyter notebooks which complement the discussion in the main
 
 - [Visualizing the galaxy catalog](./src/visualize_catalog.ipynb)
 - [Inferring cosmological parameters with standard sirens and galaxy catalogs](./src/inference_with_galaxy_catalogs.ipynb)
-- [Inferring cosmological and BBH merger rate parameters with standard sirens](./src/inference_with_merger_rate_prior.ipynb)
+- [Inferring cosmological and BBH merger rate parameters with standard sirens](./src/visualize_mcmc.ipynb)
 - [Inference bias analysis with p-p plots](./src/pp_analysis.ipynb)
 
 ## Installation
