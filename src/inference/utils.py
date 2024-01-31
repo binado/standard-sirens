@@ -58,6 +58,10 @@ def merger_rate(z, alpha, beta, c):
     return np.power(1 + z, alpha) / (1.0 + np.power((1 + z) / c, beta))
 
 
+def low_redshift_merger_rate(z, alpha):
+    return np.power(1 + z, alpha)
+
+
 def sample_from_func(n, func, x, *args, **kwargs):
     """Return samples from a function with known PDF using the inversion technique.
 

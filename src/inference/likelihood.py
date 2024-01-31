@@ -1,7 +1,16 @@
 import numpy as np
 from scipy.special import erf
 from scipy.integrate import simpson
-from .utils import flat_cosmology, gaussian, lognormal, merger_rate, normalize, luminosity_distance
+from .prior import UniformPrior
+from .utils import (
+    flat_cosmology,
+    gaussian,
+    lognormal,
+    merger_rate,
+    low_redshift_merger_rate,
+    normalize,
+    luminosity_distance,
+)
 
 GW_LIKELIHOOD_DIST_OPTIONS = ("normal", "lognormal")
 
@@ -275,39 +284,37 @@ class DrawnGWCatalogPhotozInference(DrawnGWInference):
 
 class DrawnGWMergerRatePriorInference(DrawnGWInference):
     """
-    Class implementing likelihood model using prior knowledge on the
-    star formation rate.
+    Class implementing likelihood model using prior knowledge on the BBH merger rate per comoving volume.
 
     See arxiv:2103.14038
     """
 
-    def __init__(self, H0_min, H0_max, theta_min, theta_max, *args, **kwargs):
+    def __init__(self, z, prior: UniformPrior, *args, low_redshift=False, **kwargs):
         super().__init__(*args, **kwargs)
-        self.param_min = np.array([H0_min, *theta_min])
-        self.param_max = np.array([H0_max, *theta_max])
-        self.dvc_dz_over_1pz = None
-        self.fiducial_dl_times_fiducial_H0 = None
+        self.merger_rate = low_redshift_merger_rate if low_redshift else merger_rate
+
+        # Prior limits
+        expected_prior_dim = 2 if low_redshift else 4
+        self.prior = prior
+        if self.prior.ndim != expected_prior_dim:
+            raise ValueError("Prior has incorrect dimensionality")
+
+        # Pre-computed quantities to speed up likelihood computation
+        self.dvc_dz_over_1pz = self.fiducial_cosmology.differential_comoving_volume(z).value / (1 + z)
+        self.fiducial_dl_times_fiducial_H0 = self.luminosity_distance(z) * self.H0
 
     def p_cbc(self, z, theta):
         """
         Return the probability of a CBC at z, p_pop(z | H_0)
 
-        Uses Madau-Dickinson SFR (arxiv:1403.0007)
+        Uses Madau-Dickinson-like binary formation rate (arxiv:1403.0007)
         """
-        assert self.dvc_dz_over_1pz is not None, "pre_compute method must be called first"
         # H0 dependence will cancel out in normalization
-        sfr = merger_rate(z, *theta)
+        sfr = self.merger_rate(z, *theta)
         # 1 + z factor in denominator accounts for the transformation from
         # detector frame time to source frame time
         p_cbc = self.dvc_dz_over_1pz * sfr
         return normalize(p_cbc, z)
-
-    def gw_likelihood_array(self, dl, true_dl, p_rate, z):
-        """
-        Return the sum over galaxies of p(d_L | d_L(H0, z)) for given H0
-        """
-        integrand = self.gw_likelihood(dl, true_dl) * p_rate
-        return simpson(integrand, z)
 
     def selection_effects(self, true_dl, p_rate, z):
         """
@@ -316,25 +323,19 @@ class DrawnGWMergerRatePriorInference(DrawnGWInference):
         detection_prob = self.detection_probability(true_dl)
         return simpson(detection_prob * p_rate, z)
 
-    def pre_compute(self, z):
-        self.dvc_dz_over_1pz = self.fiducial_cosmology.differential_comoving_volume(z).value / (1 + z)
-        self.fiducial_dl_times_fiducial_H0 = self.luminosity_distance(z) * self.H0
-
-    def log_prior(self, params):
-        return log_prior(params, self.param_min, self.param_max)
-
     def log_likelihood(self, gw_dl_array, H0, z, theta):
         p_rate = self.p_cbc(z, theta)
         # dl contains a factor of 1/H0
-        assert self.fiducial_dl_times_fiducial_H0 is not None, "pre_compute method must be called first"
         true_dl = self.fiducial_dl_times_fiducial_H0 / H0
-        likelihood_array = np.array([self.gw_likelihood_array(gw_dl, true_dl, p_rate, z) for gw_dl in gw_dl_array])
+        numerator_over_z = np.array([self.gw_likelihood(gw_dl, true_dl) for gw_dl in gw_dl_array])
+        numerator = simpson(numerator_over_z * p_rate, z)
         selection_effects = self.selection_effects(true_dl, p_rate, z)
-        return np.sum(np.log(likelihood_array) - np.log(selection_effects))
+        return np.sum(np.log(numerator) - np.log(selection_effects))
 
     def log_posterior(self, params, gw_dl_array, z):
         H0, *theta = params
-        lp = self.log_prior(params)
+        lp = self.prior.log_prior(params)
         if not np.isfinite(lp):
             return -np.inf
+        # Neglect uniform prior contribution
         return self.log_likelihood(gw_dl_array, H0, z, theta)
