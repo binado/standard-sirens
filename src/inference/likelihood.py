@@ -94,7 +94,7 @@ class DrawnGWInference(HierarchicalBayesianInference):
         return luminosity_distance(self.fiducial_cosmology, z)
 
     def redshift_sigma(self, z):
-        return np.minimum(0.013 * (1 + z) ** 3, self.max_redshift_err)
+        return np.minimum(0.033 * (1 + z), self.max_redshift_err)
 
     def redshift_likelihood(self, z, z_gal):
         """
