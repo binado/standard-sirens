@@ -14,11 +14,10 @@ def create_or_overwrite_dataset(file: h5py.File, dataset, data):
         file.create_dataset(dataset, data=data)
 
 
-def write_to_file(file: str, **data):
+def write_to_file(file: str, prefix="", attrs: dict = None, **data):
     with h5py.File(file, "a") as f:
-        attrs = data.pop("attrs", None)
         for key, dataset in data.items():
-            create_or_overwrite_dataset(f, key, data=dataset)
+            create_or_overwrite_dataset(f, prefix + key, data=dataset)
 
         if attrs is not None and isinstance(attrs, dict):
             f.attrs.update(**attrs)

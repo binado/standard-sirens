@@ -2,7 +2,6 @@ from tqdm import tqdm
 import numpy as np
 from scipy.integrate import cumulative_trapezoid
 from scipy.stats import binom
-import h5py
 from .utils import EventGenerator
 from .likelihood import (
     DrawnGWCatalogSpeczInference,
@@ -34,15 +33,6 @@ def draw_parameters(param_array: np.ndarray, n_sim: int):
     drawn_true_params = np.random.uniform(param_min, param_max, n_sim)
     drawn_true_params_indexes = np.searchsorted(param_array, drawn_true_params)
     return drawn_true_params, drawn_true_params_indexes
-
-
-def save_data(filename, dataset, data):
-    with h5py.File(filename, "a") as f:
-        try:
-            del f[dataset]
-        except KeyError:
-            pass
-        f.create_dataset(dataset, data=data)
 
 
 def pp_analysis_specz(
