@@ -15,12 +15,6 @@ from .utils import (
 GW_LIKELIHOOD_DIST_OPTIONS = ("normal", "lognormal")
 
 
-def log_prior(prior, prior_min, prior_max):
-    if np.all(prior >= prior_min) and np.all(prior <= prior_max):
-        return 0.0
-    return -np.inf
-
-
 def combine_posteriors(posterior_matrix, param_arr):
     """
     Return the normalised combined posterior given a posterior matrix
@@ -305,9 +299,10 @@ class DrawnGWMergerRatePriorInference(DrawnGWInference):
 
     def p_cbc(self, z, theta):
         """
-        Return the probability of a CBC at z, p_pop(z | H_0)
+        Return the merger rate prior on redshift, p(z|H0, alpha, beta, c)
 
-        Uses Madau-Dickinson-like binary formation rate (arxiv:1403.0007)
+        Uses Madau-Dickinson-like binary formation rate
+        See https://arxiv.org/abs/2003.12152
         """
         # H0 dependence will cancel out in normalization
         sfr = self.merger_rate(z, *theta)
@@ -318,7 +313,7 @@ class DrawnGWMergerRatePriorInference(DrawnGWInference):
 
     def selection_effects(self, true_dl, p_rate, z):
         """
-        Return an array with GW likelihood selection effects for each H0 in the array
+        Return the estimated GW likelihood selection effects
         """
         detection_prob = self.detection_probability(true_dl)
         return simpson(detection_prob * p_rate, z)
@@ -327,6 +322,7 @@ class DrawnGWMergerRatePriorInference(DrawnGWInference):
         p_rate = self.p_cbc(z, theta)
         # dl contains a factor of 1/H0
         true_dl = self.fiducial_dl_times_fiducial_H0 / H0
+        # This is a n_events x n_z array
         numerator_over_z = np.array([self.gw_likelihood(gw_dl, true_dl) for gw_dl in gw_dl_array])
         numerator = simpson(numerator_over_z * p_rate, z)
         selection_effects = self.selection_effects(true_dl, p_rate, z)
