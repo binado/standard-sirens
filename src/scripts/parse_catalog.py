@@ -24,9 +24,8 @@ available_bands = GLADECatalogTranslator.available_bands()
 
 # Adding CLI arguments
 argument_parser = argparse.ArgumentParser(prog="parse_catalog", description="Parse GLADE+ catalog")
-argument_parser.add_argument("filename", type=Path, help="Catalog file name")
+argument_parser.add_argument("filename", type=Path, help="Path to GLADE+ text file")
 argument_parser.add_argument("-o", "--output", default="output.hdf5", help="Output file name")
-argument_parser.add_argument("--magnitude-filename", default="magnitudes.hdf5", help="Magnitude data file name")
 argument_parser.add_argument("--nside", type=int, default=default_nside, help="nside HEALPIX parameter")
 argument_parser.add_argument(
     "-n",
@@ -83,7 +82,6 @@ if __name__ == "__main__":
     nest = args.nest
     filename = os.path.join(dirname, args.filename)
     output = args.output
-    magnitudes_filename = args.magnitude_filename
 
     cols = GLADECatalogTranslator.get_columns(args.bands, catalog_flags=args.catalog_flags, mass=args.mass)
 
@@ -102,24 +100,11 @@ if __name__ == "__main__":
 
     # Extract data from catalog
     # (theta, phi) = (ra * 180 / pi + pi/2, dec * 180 / pi)
-    ra = catalog["ra"] * np.pi / 180
-    dec = catalog["dec"] * np.pi / 180
-    z = catalog["z_cmb"]
-    mass = catalog["mass"]
-
-    band_datasets = dict()
-    for band in args.bands:
-        if band in available_bands:
-            band_datasets.update(**{key: catalog[key] for key in luminosity_bands[band].keys()})
+    catalog["ra"] *= np.pi / 180
+    catalog["dec"] *= np.pi / 180
 
     # Build output file
     logging.info("Writing to output file")
-    output_data = dict(ra=ra, dec=dec, z=z, mass=mass)
-    write_to_file(
-        output, output_data, prefix="galaxies/", attrs=dict(nside=nside, nest=nest), compression=args.compression
-    )
-    # Build magnitudes file
-    logging.info("Writing to magnitudes file")
-    write_to_file(output, band_datasets, prefix="magnitudes/", compression=args.compression)
-
+    output_data = {key: data for key, data in catalog.items()}
+    write_to_file(output, output_data, dtypes, attrs=dict(nside=nside, nest=nest), compression=args.compression)
     logging.info("Done!")
