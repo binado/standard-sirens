@@ -24,7 +24,7 @@ class GLADECatalogTranslator:
         "B": {
             "m_B": np.float64,
             "m_B_err": np.float64,
-            "m_B_flag": "Int64",
+            "m_B_flag": np.float64,
             "m_B_abs": np.float64,
         },
         "J": {
@@ -43,7 +43,7 @@ class GLADECatalogTranslator:
             "m_W1": np.float64,
             "m_W1_err": np.float64,
         },
-        "W2": {"m_W2": np.float64, "m_W2_err": np.float64, "m_W1_flag": "Int64"},
+        "W2": {"m_W2": np.float64, "m_W2_err": np.float64, "m_W1_flag": np.float64},
         "BJ": {
             "m_BJ": np.float64,
             "m_BJ_err": np.float64,
@@ -52,17 +52,17 @@ class GLADECatalogTranslator:
     redshift = {
         "z_helio": np.float64,
         "z_cmb": np.float64,
-        "z_flag": "Int64",
+        "z_flag": np.float64,
         "v_err": np.float64,
         "z_err": np.float64,
         "d_L": np.float64,
         "d_L_err": np.float64,
-        "dist_flag": "Int64",
+        "dist_flag": np.float64,
     }
     mass_and_merger_rate = {
         "m_*": np.float64,
         "m_*_err": np.float64,
-        "m_*_flag": "Int64",
+        "m_*_flag": np.float64,
         "merger_rate": np.float64,
         "merger_rate_err": np.float64,
     }
