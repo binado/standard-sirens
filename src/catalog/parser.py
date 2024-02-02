@@ -76,6 +76,7 @@ class GLADECatalogTranslator:
         luminosity_dtypes = dict()
         for flags in cls.luminosity_bands.values():
             luminosity_dtypes.update(**flags)
+        return luminosity_dtypes
 
     @classmethod
     def dtypes(cls):
