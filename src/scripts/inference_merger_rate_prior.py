@@ -74,7 +74,7 @@ if __name__ == "__main__":
         )
         logging.info("Low redshift configuration: %s", low_redshift)
 
-    full_z = np.linspace(1e-4, 20, 1000)
+    full_z = np.linspace(1e-4, 2.3, 1000)
     mr = low_redshift_merger_rate if low_redshift else merger_rate
     event_redshifts = sample_from_func(100 * n_events, merger_rate, full_z, *md_theta)
     if verbose:
