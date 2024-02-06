@@ -294,7 +294,7 @@ class DrawnGWMergerRatePriorInference(DrawnGWInference):
             raise ValueError("Prior has incorrect dimensionality")
 
         # Pre-computed quantities to speed up likelihood computation
-        self.dvc_dz_over_1pz = self.fiducial_cosmology.differential_comoving_volume(z).value / (1 + z)
+        self.dvc_dz_over_1pz = 4 * np.pi * self.fiducial_cosmology.differential_comoving_volume(z).value / (1 + z)
         self.fiducial_dl_times_fiducial_H0 = self.luminosity_distance(z) * self.H0
 
     def p_cbc(self, z, theta):
@@ -318,7 +318,13 @@ class DrawnGWMergerRatePriorInference(DrawnGWInference):
         detection_prob = self.detection_probability(true_dl)
         return simpson(detection_prob * p_rate, z)
 
-    def log_likelihood(self, gw_dl_array, H0, z, theta):
+    def likelihood(self, params, gw_dl_array, z):
+        """
+        Compute multi-event likelihood.
+
+        Used for diagnostic purposes
+        """
+        H0, *theta = params
         p_rate = self.p_cbc(z, theta)
         # dl contains a factor of 1/H0
         true_dl = self.fiducial_dl_times_fiducial_H0 / H0
@@ -326,12 +332,31 @@ class DrawnGWMergerRatePriorInference(DrawnGWInference):
         numerator_over_z = np.array([self.gw_likelihood(gw_dl, true_dl) for gw_dl in gw_dl_array])
         numerator = simpson(numerator_over_z * p_rate, z)
         selection_effects = self.selection_effects(true_dl, p_rate, z)
-        return np.sum(np.log(numerator) - np.log(selection_effects))
+        return np.prod(numerator / selection_effects)
+
+    def log_likelihood(self, params, gw_dl_array, z):
+        """
+        Compute multi-event log-likelihood
+
+        params = {H_0, \alpha, \beta, c}
+        """
+        H0, *theta = params
+        p_rate = self.p_cbc(z, theta)
+        # dl contains a factor of 1/H0
+        true_dl = self.fiducial_dl_times_fiducial_H0 / H0
+        # This is a n_events x n_z array
+        numerator_over_z = np.array([self.gw_likelihood(gw_dl, true_dl) for gw_dl in gw_dl_array])
+        numerator = simpson(numerator_over_z * p_rate, z)
+        selection_effects = self.selection_effects(true_dl, p_rate, z)
+        log_like = np.log(numerator) - np.log(selection_effects)
+        return np.sum(log_like)
 
     def log_posterior(self, params, gw_dl_array, z):
-        H0, *theta = params
+        """
+        Compute log-posterior
+        """
         lp = self.prior.log_prior(params)
         if not np.isfinite(lp):
             return -np.inf
         # Neglect uniform prior contribution
-        return self.log_likelihood(gw_dl_array, H0, z, theta)
+        return self.log_likelihood(params, gw_dl_array, z)
