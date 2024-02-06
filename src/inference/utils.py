@@ -55,7 +55,7 @@ def luminosity_distance(cosmology, z):
 
 
 def merger_rate(z, alpha, beta, c):
-    return np.power(1 + z, alpha) / (1.0 + np.power((1 + z) / c, beta))
+    return np.power(1 + z, alpha) / (1.0 + np.power((1 + z) / (1 + c), alpha + beta))
 
 
 def low_redshift_merger_rate(z, alpha):
