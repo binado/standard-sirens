@@ -23,3 +23,7 @@ class UniformPrior:
         if np.all(prior >= self.prior_min) and np.all(prior <= self.prior_max):
             return self.log_norm
         return -np.inf
+
+    def prior_transform(self, u):
+        average = 0.5 * (self.prior_max + self.prior_min)
+        return self.interval * (u - 0.5) + average
