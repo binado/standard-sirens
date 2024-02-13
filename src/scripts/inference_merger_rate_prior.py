@@ -156,6 +156,6 @@ if __name__ == "__main__":
     if verbose:
         logging.info("Starting %s", SAMPLING_STRATEGIES[args.strategy])
     strategy.run(*sampling_args, **sampling_kwargs)
-    logging.info(f"Saving run summary to {output_filename}")
+    logging.info("Saving run summary to %s", output_filename)
     sampling_run = SamplingRun(params, prior, strategy)
     sampling_run.save_to_json(output_filename, **attrs)
