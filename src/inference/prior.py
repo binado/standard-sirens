@@ -46,6 +46,9 @@ class UniformPrior:
 
         self.log_norm = -np.log(self.norm)
 
+    def __str__(self):
+        return f"Uniform({self.prior_min}, {self.prior_max})"
+
     @property
     def interval(self):
         return self.prior_max - self.prior_min
