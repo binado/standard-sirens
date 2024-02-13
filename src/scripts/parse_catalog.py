@@ -5,7 +5,7 @@ import logging
 
 import numpy as np
 
-from ..utils.hdf5 import write_to_file
+from ..utils.io import write_to_hdf5
 from ..utils.logger import logging_config
 from ..catalog.parser import GLADECatalogTranslator, GLADECatalogParser
 
@@ -106,5 +106,5 @@ if __name__ == "__main__":
     # Build output file
     logging.info("Writing to output file")
     output_data = {key: data for key, data in catalog.items()}
-    write_to_file(output, output_data, dtypes, attrs=dict(nside=nside, nest=nest), compression=args.compression)
+    write_to_hdf5(output, output_data, dtypes, attrs=dict(nside=nside, nest=nest), compression=args.compression)
     logging.info("Done!")
