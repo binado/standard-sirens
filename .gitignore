@@ -10,6 +10,7 @@ __pycache__/
 .vscode/
 
 # Datasets
+data/
 *.txt
 !requirements.txt
 *.hdf5
