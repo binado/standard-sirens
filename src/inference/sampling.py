@@ -88,7 +88,7 @@ class NestedStrategy(SamplingStrategy):
         self.sampler.run_nested(**kwargs)
         results = self.sampler.results.asdict()
         if self.filename:
-            with open(self.filename, "r+b") as f:
+            with open(self.filename, "wb") as f:
                 pickle.dump(results, f)
 
     @staticmethod
