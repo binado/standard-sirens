@@ -1,21 +1,44 @@
+import abc
 import pickle
+
 import numpy as np
 from emcee import EnsembleSampler
 from emcee.backends import HDFBackend
 from dynesty import DynamicNestedSampler
 from dynesty.results import Results
+import json
 
-from .prior import UniformPrior
+from .prior import Parameters, UniformPrior
 
 
-class MCMCStrategy:
+SAMPLING_STRATEGIES = {
+    "mcmc": {"name": "MCMC", "format": "hdf5"},
+    "nested": {"name": "Nested Sampling", "format": "pickle"},
+}
+FORMATS = ["pickle", "hdf5"]
+
+
+class SamplingStrategy(abc.ABC):
+    name = None
+    format = "pickle"
+
+    @abc.abstractmethod
+    def run(self, *args, **kwargs):
+        pass
+
+
+class MCMCStrategy(SamplingStrategy):
     """
     A wrapper class over `emcee`'s `EnsembleSampler`.
 
     See https://emcee.readthedocs.io/en/stable/user/sampler/
     """
 
+    name = SAMPLING_STRATEGIES["mcmc"]
+    format = "hdf5"
+
     def __init__(self, nwalkers, ndim, logprob, filename=None, reset=False, **kwargs) -> None:
+        super().__init__()
         self.nwalkers, self.ndim = nwalkers, ndim
         self.backend = None
         if filename:
@@ -44,32 +67,48 @@ class MCMCStrategy:
         return HDFBackend(filename, read_only=True)
 
 
-class NestedStrategy:
+class NestedStrategy(SamplingStrategy):
     """
     A wrapper class over `dynesty`'s top-level interface.
 
     See https://dynesty.readthedocs.io/en/stable/api.html#module-dynesty.dynesty
     """
 
+    name = SAMPLING_STRATEGIES["nested"]
+    format = "pickle"
+
     def __init__(self, loglike, prior: UniformPrior, filename=None, **kwargs) -> None:
+        super().__init__()
         self.prior = prior
         self.ndim = prior.ndim
         self.filename = filename
         self.sampler = DynamicNestedSampler(loglike, prior.prior_transform, self.ndim, **kwargs)
-        self.results = None
 
-    def run(self, **kwargs):
+    def run(self, *args, **kwargs):
         self.sampler.run_nested(**kwargs)
-        self.results = self.sampler.results
+        results = self.sampler.results.asdict()
         if self.filename:
-            self.save_to_file(self.filename)
-
-    def save_to_file(self, filename):
-        with open(filename, "r+b") as f:
-            pickle.dump(self.results.asdict(), f)
+            with open(self.filename, "r+b") as f:
+                pickle.dump(results, f)
 
     @staticmethod
     def read_from_file(filename):
         with open(filename, "rb") as f:
-            results_as_dict = pickle.load(f)
-            return Results(results_as_dict)
+            obj = pickle.load(f)
+            return Results(obj)
+
+
+class SamplingRun:
+    def __init__(self, params: Parameters, prior: UniformPrior, strategy: SamplingStrategy):
+        self.params = params
+        self.prior = prior
+        self.strategy = strategy
+
+    def asdict(self, **attrs):
+        val = dict(strategy=self.strategy.name, prior=str(self.prior))
+        val.update(**self.params.asdict(), **attrs)
+        return val
+
+    def save_to_json(self, filename, **attrs):
+        with open(filename, "w", encoding="utf8") as f:
+            json.dump(self.asdict(**attrs), f)
