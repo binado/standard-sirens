@@ -1,7 +1,8 @@
+import abc
 import numpy as np
 from scipy.special import erf
 from scipy.integrate import simpson
-from .prior import UniformPrior
+from .prior import Parameters, UniformPrior
 from .utils import (
     flat_cosmology,
     gaussian,
@@ -43,6 +44,28 @@ def combine_posteriors(posterior_matrix, param_arr):
     # else:
     #     combined_posterior /= combined_norm
     return combined_posterior, posterior_matrix
+
+
+class SamplingLikelihood(abc.ABC):
+    def __init__(self, params: Parameters, prior: UniformPrior, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.params = params
+        self.prior = prior
+
+    @abc.abstractmethod
+    def log_likelihood(self, params, *args):
+        pass
+
+    def log_posterior(self, params, *args):
+        """
+        Compute log-posterior
+        """
+        all_params = self.params(params)
+        lp = self.prior.log_prior(params)
+        if not np.isfinite(lp):
+            return -np.inf
+        # Neglect uniform prior contribution
+        return self.log_likelihood(all_params, *args)
 
 
 class HierarchicalBayesianInference:
@@ -276,22 +299,16 @@ class DrawnGWCatalogPhotozInference(DrawnGWInference):
         return combine_posteriors(likelihood_matrix, H0_array)
 
 
-class DrawnGWMergerRatePriorInference(DrawnGWInference):
+class DrawnGWMergerRatePriorInference(SamplingLikelihood, DrawnGWInference):
     """
     Class implementing likelihood model using prior knowledge on the BBH merger rate per comoving volume.
 
     See arxiv:2103.14038
     """
 
-    def __init__(self, z, prior: UniformPrior, *args, low_redshift=False, **kwargs):
+    def __init__(self, z, *args, low_redshift=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.merger_rate = low_redshift_merger_rate if low_redshift else merger_rate
-
-        # Prior limits
-        expected_prior_dim = 2 if low_redshift else 4
-        self.prior = prior
-        if self.prior.ndim != expected_prior_dim:
-            raise ValueError("Prior has incorrect dimensionality")
 
         # Pre-computed quantities to speed up likelihood computation
         self.dvc_dz_over_1pz = 4 * np.pi * self.fiducial_cosmology.differential_comoving_volume(z).value / (1 + z)
@@ -334,13 +351,14 @@ class DrawnGWMergerRatePriorInference(DrawnGWInference):
         selection_effects = self.selection_effects(true_dl, p_rate, z)
         return np.prod(numerator / selection_effects)
 
-    def log_likelihood(self, params, gw_dl_array, z):
+    def log_likelihood(self, params, *args):
         """
         Compute multi-event log-likelihood
 
         params = {H_0, \alpha, \beta, c}
         """
         H0, *theta = params
+        gw_dl_array, z = args
         p_rate = self.p_cbc(z, theta)
         # dl contains a factor of 1/H0
         true_dl = self.fiducial_dl_times_fiducial_H0 / H0
@@ -350,13 +368,3 @@ class DrawnGWMergerRatePriorInference(DrawnGWInference):
         selection_effects = self.selection_effects(true_dl, p_rate, z)
         log_like = np.log(numerator) - np.log(selection_effects)
         return np.sum(log_like)
-
-    def log_posterior(self, params, gw_dl_array, z):
-        """
-        Compute log-posterior
-        """
-        lp = self.prior.log_prior(params)
-        if not np.isfinite(lp):
-            return -np.inf
-        # Neglect uniform prior contribution
-        return self.log_likelihood(params, gw_dl_array, z)
