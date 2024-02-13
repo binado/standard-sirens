@@ -60,12 +60,11 @@ class SamplingLikelihood(abc.ABC):
         """
         Compute log-posterior
         """
-        all_params = self.params(params)
         lp = self.prior.log_prior(params)
         if not np.isfinite(lp):
             return -np.inf
         # Neglect uniform prior contribution
-        return self.log_likelihood(all_params, *args)
+        return self.log_likelihood(params, *args)
 
 
 class HierarchicalBayesianInference:
@@ -357,7 +356,7 @@ class DrawnGWMergerRatePriorInference(SamplingLikelihood, DrawnGWInference):
 
         params = {H_0, \alpha, \beta, c}
         """
-        H0, *theta = params
+        H0, *theta = self.params(params)
         gw_dl_array, z = args
         p_rate = self.p_cbc(z, theta)
         # dl contains a factor of 1/H0
