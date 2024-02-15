@@ -27,9 +27,10 @@ prior_min, prior_max = np.array([20.0, 0.0, 0.0, 0.0]), np.array([140.0, 10.0, 1
 # Sampling parameters
 nevents = 200
 sigma_dl = 0.1
+dl_th = 3000
 n_walkers = 32
-nsteps = 1000
-full_z = np.linspace(1e-4, 10.0, 1000)
+nsteps = 10000
+full_z = np.linspace(1e-4, 10.0, 2000)
 
 logger_output_file = "logs/scripts.log"
 output_dir = "data/runs"
@@ -123,14 +124,15 @@ if __name__ == "__main__":
         prior,
         fiducial_H0=fiducial_H0,
         sigma_dl=sigma_dl,
+        dl_th=dl_th,
         low_redshift=low_redshift,
     )
     cosmology = inference.fiducial_cosmology
-    event_redshifts = sample_from_func(1000 * nevents, inference.p_cbc, full_z, md_theta)
+    event_redshifts = sample_from_func(100000 * nevents, inference.p_cbc, full_z, md_theta)
     if verbose:
         logging.info("Mean generated redshift: %s", np.average(event_redshifts))
         logging.info("Median generated redshift: %s", np.median(event_redshifts))
-    events = EventGenerator(fiducial_H0).from_redshifts(cosmology, event_redshifts, sigma_dl)[:nevents]
+    events = EventGenerator(fiducial_H0, dl_th=dl_th).from_redshifts(cosmology, event_redshifts, sigma_dl)[:nevents]
     if verbose:
         logging.info("%s events were generated", len(events))
 
