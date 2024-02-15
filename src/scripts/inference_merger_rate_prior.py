@@ -84,7 +84,9 @@ if __name__ == "__main__":
     truths = args.truths
 
     dataformat = SAMPLING_STRATEGIES[args.strategy].get("format")
-    output_filename = f"{args.output}/{list_to_str(args.params)}_strategy={args.strategy}_nsteps={nsteps}.json"
+    output_filename = (
+        f"{args.output}/{list_to_str(args.params)}_strategy={args.strategy}_nevents={nevents}_nsteps={nsteps}.json"
+    )
     samples_filename = str(uuid4())
     samples_filepath = f"{samples_dir}/{samples_filename}.{dataformat}"
 
