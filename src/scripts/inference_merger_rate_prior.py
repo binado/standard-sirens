@@ -112,9 +112,6 @@ if __name__ == "__main__":
     # Define params to be used
     params = Parameters(labels, plot_labels, truths, **fixed_params)
 
-    n_theta = 1 if low_redshift else len(md_theta)
-    n_params = n_theta + 1  # Theta + H0
-
     logging_config(logger_output_file)
     if verbose:
         logging.info("Starting inference run for parameters %s with:", args.params)
