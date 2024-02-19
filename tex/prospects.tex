@@ -354,7 +354,6 @@ Eq.~\eqref{eq:stat:nalpha} respectively. The full posterior with the population 
 \begin{align}
 	\nonumber
 	\given{\vec{\Lambda}, N }{\vec{d}} & = \given{N}{\vec{\Lambda}, \vec{d}}\given{\vec{\Lambda}}{\vec{d}}                    \\
-	\label{eq:stat:full-hierarchical-posterior}
 	                                   & = e^{-\ndet}(\ndet)^{\nobs} \pi(N) \pi(\vec{\Lambda}) \alpha(\vec{\Lambda})^{-\nobs}
 	\prod_{i=1}^{\nobs} \int \given{\vec{d_i}}{\vec{\theta}} \ppop(\vec{\theta} | \vec{\Lambda} ) d\vec{\theta}
 \end{align}
@@ -364,8 +363,16 @@ marginalized over $N$:
 
 \begin{align}
 	\int e^{-\ndet}(\ndet)^{\nobs} \frac{dN}{N} & = \int e^{-\ndet}(\ndet)^{\nobs - 1} d\ndet \\
-	                                            & = (\nobs - 1)!
+	                                            & = (\nobs - 1)!,
 \end{align}
+
+such that the full posterior becomes
+
+\begin{equation}
+	\label{eq:stat:full-hierarchical-posterior}
+	\given{\vec{\Lambda}, N }{\vec{d}} = \pi(\vec{\Lambda}) \alpha(\vec{\Lambda})^{-\nobs}
+	\prod_{i=1}^{\nobs} \int \given{\vec{d_i}}{\vec{\theta}} \ppop(\vec{\theta} | \vec{\Lambda} ) d\vec{\theta}
+\end{equation}
 
 So far, the framework we developed has been general; we now specify to the gravitational wave case.
 The individual event parameters $\vec{\theta}$ describe the compact binary coalescence (CBC): the
@@ -460,6 +467,46 @@ Alternatively, we model the photo-$z$ redshift likelihood as a gaussian,
 
 with $\sigma_z \sim \rm{min}\{0.033(1+z), 0.015\}$, following an empirical fit described in
 Ref.~\onlinecite{DES:2019ccw}.
+
+\subsection{Inferring the BBH merger rate}
+
+In this section, we derive a simplified model to infer the BBH merger rate density ($\rm{Gpc}^{-3}
+	\rm{yr}^{-1})$, and to assess whether it evolves with redshift or not. We parametrize the merger
+rate per comoving volume as a curve following the shape of the star formation rate
+density~\cite{Madau:2014bja}
+
+\begin{equation}
+	R(z) \equiv \frac{dN}{dt_d dV_c} = R_0 [1 + (1 + z_p)^{-\alpha -\beta}]\frac{(1 + z)^{\alpha}}{1 + \left ( \frac{1 + z}{1 + z_p} \right)^{\alpha + \beta}},
+\end{equation}
+
+where $t_d$ is the time coordinate in the detector frame, $V_c$ is the comoving volume, $R_0$ is
+the merger rate density at $z=0$, $\alpha$ is the increasing power law slope, $\beta$ is the
+decreasing power law slope, and $z_p$ is the approximate position of the peak of $R(z)$ in
+redshift. The merger rate density over redshift requires an additional Jacobian $dV_c/dz$,
+
+\begin{equation}
+	\mathcal{R}(z) \equiv \frac{dN}{dt_s dz} = \frac{dN}{dt_d dV_c} \frac{dt_d}{dt_s} \frac{dV_c}{dz} = \frac{1}{1 + z} \frac{dV_c}{dz} R(z),
+\end{equation}
+
+where $t_s$ is the time coordinate in the source frame, and $dV_c /dz$ is the differential comoving
+volume given by
+
+\begin{equation}
+	\frac{dV_c}{dz} =  \frac{4 \pi }{E(z)}\pa{\frac{c}{H_0}}^3 \pa{\int_0^z \frac{d\tilde{z}}{E(\tilde{z})}}^2.
+\end{equation}
+
+The differential comoving volume encodes the dependence of the merger rate on the cosmological
+model. The BBH merger rate is not expected to exactly trace the star formation rate because of the
+time delay between the formation of the progenitors and the
+merger~\cite{santoliquido_cosmic_2020,fishbach_time_2021,van_son_redshift_2022}. In what follows,
+we will adopt a simplified model where tiem delay is neglected.
+
+The merger rate density over redshift $\mathcal{R}(z)$ enters the hierarchical posterior,
+Eq.~\eqref{eq:stat:full-hierarchical-posterior}, as a factor of the population prior
+
+\begin{equation}
+	\given{z}{\vec{\Lambda}} = \frac{\mathcal{R}(z)}{\int \mathcal{R}(\tilde{z}) d\tilde{z}}
+\end{equation}
 
 \section{Method}
 \label{sec:method}
@@ -573,19 +620,13 @@ a playground for exploring different strategies for performing inference with st
 \rs{\subsection{Suggestions for development}}
 
 \begin{itemize}
-\item Not all redshifts are equally probable, we expect a source distribution
-  to follow somehow the Madau-Dickinson one \cite{Madau:2014bja}: 
-  \be
-  R(z)=\frac{dV}{dz}\psi(z)
-  \ee
-  where
-  \be
-  \psi(z)=C_0\frac{(1+z)^\alpha}{\paq{1+\frac{1+z}B}^{\beta}}yr^{-1}Gpc^{-3}
-  \ee
+	\item Not all redshifts are equally probable, we expect a source distribution to follow somehow the
+	      Madau-Dickinson one \cite{Madau:2014bja}: \be R(z)=\frac{dV}{dz}\psi(z) \ee where \be
+	      \psi(z)=C_0\frac{(1+z)^\alpha}{\paq{1+\frac{1+z}B}^{\beta}}yr^{-1}Gpc^{-3} \ee
 
-Is it possible to recover the valus of $\alpha,\beta, B$?
+	      Is it possible to recover the valus of $\alpha,\beta, B$?
 
-\item Not all galaxies are equally probable, one can weigh them with the mass.
+	\item Not all galaxies are equally probable, one can weigh them with the mass.
 
 \end{itemize}
 
