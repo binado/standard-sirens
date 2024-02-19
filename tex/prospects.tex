@@ -250,21 +250,20 @@ In the discussion below, we will follow the framework outlined in Ref.~\onlineci
 (hereinafter HG23), which is a pedagogical resource on the galaxy catalog approach.
 
 The GW population distribution is sampled with a set of $\nobs$ \textit{observed} events with true
-parameters $\{ \vec{\theta}_i \}$, $i \in \{1, \cdots, \nobs\}$. We do not have direct access to
-the true parameters because of noise; instead, we have a set of measured data $\{ \vec{d}_i \}$.
-The $\vec{\theta}_i$ are the individual object parameters, although we are interested in the
-population hyperparameters, which we call $\vec{\Lambda}$. We cannot determine $\vec{\Lambda}$
-directly, but we can compute the posterior probability given the observations. In the usual
-Bayesian formalism,
+parameters $\{ \theta_i \}$, $i \in \{1, \cdots, \nobs\}$. We do not have direct access to the true
+parameters because of noise; instead, we have a set of measured data $\{ \vec{d}_i \}$. The
+$\theta_i$ are the individual object parameters, although we are interested in the population
+hyperparameters, which we call $\Lambda$. We cannot determine $\Lambda$ directly, but we can
+compute its posterior probability given the observations. In the usual Bayesian formalism,
 
 \begin{equation}
-	\given{\vec{\Lambda}}{\{\vec{d}_i \}} =
-	\frac{\given{\{\vec{d}_i \}}{\vec{\Lambda}} \pi(\vec{\Lambda})}{p(\{\vec{d}_i \})}
+	\given{\Lambda}{\{\vec{d}_i \}} =
+	\frac{\given{\{\vec{d}_i \}}{\Lambda} \pi(\Lambda)}{p(\{\vec{d}_i \})}
 \end{equation}
 
-where $\given{\{\vec{d}_i \}}{\vec{\Lambda}}$ is the likelihood of observing the dataset given the
-population properties, $\pi(\vec{\Lambda})$ is the prior on $\vec{\Lambda}$ and $p(\{\vec{d}_i \})$
-is the evidence, which is the integral of the numerator over $\vec{\Lambda}$.
+where $\given{\{\vec{d}_i \}}{\Lambda}$ is the likelihood of observing the dataset given the
+population properties, $\pi(\Lambda)$ is the prior on $\Lambda$ and $p(\{\vec{d}_i \})$ is the
+evidence, which is the integral of the numerator over $\Lambda$.
 
 In the spirit of Ref.~\onlinecite{Mandel:2018mve}, we first start with the idealized scenario where
 the event parameters are perfectly measured. The total likelihood for the set of $\nobs$
@@ -272,23 +271,23 @@ independent measurements is then
 
 \begin{equation}
 	\label{eq:stat:posterior-no-noise-no-bias}
-	\given{\{ \vec{\theta}_i \}}{\vec{\Lambda}} =
-	\prod_{i=1}^{\nobs} \frac{\ppop(\vec{\theta}_i | \vec{\Lambda})}{\int \ppop(\vec{\theta}_i | \vec{\Lambda}) d\vec{\Lambda}}
+	\given{\{ \theta_i \}}{\Lambda} =
+	\prod_{i=1}^{\nobs} \frac{\ppop(\theta_i | \Lambda)}{\int \ppop(\theta_i | \Lambda) d\Lambda}
 \end{equation}
 
-where $\ppop(\vec{\theta} | \vec{\Lambda})$ is related to the number density $dN$ of objects
-expected to be found in the region $[\vec{\theta}, \vec{\theta} + d\vec{\theta}]$:
+where $\ppop(\theta | \Lambda)$ is related to the number density $dN$ of objects expected to be
+found in the region $[\theta, \theta + d\theta]$:
 
 \begin{equation}
 	\label{eq:stat:ppop}
-	dN = N \ppop(\vec{\theta} | \vec{\Lambda}) d\vec{\theta}
+	dN = N \ppop(\theta | \Lambda) d\theta
 \end{equation}
 
 We shall build an incrementally more robust model than
 Eq.~\eqref{eq:stat:posterior-no-noise-no-bias}. Let us first consider the presence of selection
 effects: not all events are equally likely to be detected. We can encode this with a detection
 probability $\pdet$. In the perfect measurement idealization, this detection probability becomes a
-function of the parameters $\vec{\theta}$ only. In the general case, where noise is present, the
+function of the parameters $\theta$ only. In the general case, where noise is present, the
 detection probability is a function of the data. Let $\mathcal{D}$ be the set of all data. To
 determine whether an event is detectable, one can use a detection statistic $\rho_{\mathcal{D}}$,
 which can be calculated for each piece of data. In practice, this statistic can be the
@@ -298,34 +297,34 @@ than a threshold $\rho_{\text{tr}}$ or not. Then
 
 \begin{equation}
 	\label{eq:stat:detection-prob}
-	\pdet(\vec{\theta}) = \int_{\mathcal{D}_\geq} \given{\vec{d}}{\vec{\theta}}d\vec{d}
+	\pdet(\theta) = \int_{\mathcal{D}_\geq} \given{\vec{d}}{\theta}d\vec{d}
 \end{equation}
 
 The probability of observing a particular dataset $\vec{d}$ given the assumed population
-distribution parameterised by $\vec{\Lambda}$ is
+distribution parameterised by $\Lambda$ is
 
 \begin{equation}
-	\given{\vec{d}}{\vec{\Lambda}} =
-	\frac{\int \given{\vec{d}}{\vec{\theta}} \ppop(\vec{\theta} | \vec{\Lambda} ) d\vec{\theta}}{\alpha(\vec{\Lambda})}
+	\given{\vec{d}}{\Lambda} =
+	\frac{\int \given{\vec{d}}{\theta} \ppop(\theta | \Lambda ) d\theta}{\alpha(\Lambda)}
 \end{equation}
 
-where $\alpha(\vec{\Lambda})$ is a normalization factor integrated over the set of detectable data,
+where $\alpha(\Lambda)$ is a normalization factor integrated over the set of detectable data,
 
 \begin{align}
-	\alpha(\vec{\Lambda}) & =
-	\int_{\mathcal{D}_\geq} d\vec{d} \int \given{\vec{d}}{\vec{\theta}} \ppop(\vec{d} | \vec{\Lambda} ) d\vec{\theta}                                           \\
-	                      & = \int \left[ \int_{\mathcal{D}_\geq} \given{\vec{d}}{\vec{\theta}} d\vec{d} \right]  \ppop(\vec{d} | \vec{\Lambda} ) d\vec{\theta} \\
+	\alpha(\Lambda) & =
+	\int_{\mathcal{D}_\geq} d\vec{d} \int \given{\vec{d}}{\theta} \ppop(\vec{d} | \Lambda ) d\theta                                     \\
+	                & = \int \left[ \int_{\mathcal{D}_\geq} \given{\vec{d}}{\theta} d\vec{d} \right]  \ppop(\vec{d} | \Lambda ) d\theta \\
 	\label{eq:stat:nalpha}
-	                      & = \int \pdet(\vec{\theta}) \ppop(\vec{\theta} | \vec{\Lambda} ) d\vec{\theta}
+	                & = \int \pdet(\theta) \ppop(\theta | \Lambda ) d\theta
 \end{align}
 
 Hence, in the presence of both measurement uncertainties and selection effects,
 Eq.~\eqref{eq:stat:posterior-no-noise-no-bias} becomes
 
 \begin{equation}
-	\given{\{ \vec{d}_i \}}{\vec{\Lambda}} =
+	\given{\{ \vec{d}_i \}}{\Lambda} =
 	\prod_{i=1}^{\nobs}
-	\frac{\int \given{\vec{d_i}}{\vec{\theta}} \ppop(\vec{\theta} | \vec{\Lambda} ) d\vec{\theta}}{\int \pdet(\vec{\theta}) \ppop(\vec{\theta} | \vec{\Lambda} ) d\vec{\theta}}
+	\frac{\int \given{\vec{d_i}}{\theta} \ppop(\theta | \Lambda ) d\theta}{\int \pdet(\theta) \ppop(\theta | \Lambda ) d\theta}
 \end{equation}
 
 We can also include the population rate into the framework. The probability of observing $k$ events
@@ -341,11 +340,11 @@ distinguishable from the observed data. When accouting for selection effects, th
 of detections $\ndet$ becomes
 
 \begin{align}
-	\ndet(\vec{\Lambda}) & = \int_{\mathcal{D}_\geq}  d\vec{d} \int \given{\vec{d}}{\vec{\theta}} \frac{dN}{d\vec{\theta}} d\vec{\theta} \\
-	                     & = \int \left[ \int_{\mathcal{D}_\geq} \given{\vec{d}} d\vec{d} \right]\frac{dN}{d\vec{\theta}} d\vec{\theta}  \\
-	                     & = \int \pdet(\vec{\theta})\frac{dN}{d\vec{\theta}} d\vec{\theta}                                              \\
-	                     & = \int \pdet(\vec{\theta}) N \ppop(\vec{\theta} | \vec{\Lambda}) d\vec{\theta}                                \\
-	                     & = N \alpha(\Lambda)
+	\ndet(\Lambda) & = \int_{\mathcal{D}_\geq}  d\vec{d} \int \given{\vec{d}}{\theta} \frac{dN}{d\theta} d\theta      \\
+	               & = \int \left[ \int_{\mathcal{D}_\geq} \given{\vec{d}} d\vec{d} \right]\frac{dN}{d\theta} d\theta \\
+	               & = \int \pdet(\theta)\frac{dN}{d\theta} d\theta                                                   \\
+	               & = \int \pdet(\theta) N \ppop(\theta | \Lambda) d\theta                                           \\
+	               & = N \alpha(\Lambda)
 \end{align}
 
 where the last two equalities are derived from Eq.~\eqref{eq:stat:ppop} and
@@ -353,9 +352,9 @@ Eq.~\eqref{eq:stat:nalpha} respectively. The full posterior with the population 
 
 \begin{align}
 	\nonumber
-	\given{\vec{\Lambda}, N }{\vec{d}} & = \given{N}{\vec{\Lambda}, \vec{d}}\given{\vec{\Lambda}}{\vec{d}}                    \\
-	                                   & = e^{-\ndet}(\ndet)^{\nobs} \pi(N) \pi(\vec{\Lambda}) \alpha(\vec{\Lambda})^{-\nobs}
-	\prod_{i=1}^{\nobs} \int \given{\vec{d_i}}{\vec{\theta}} \ppop(\vec{\theta} | \vec{\Lambda} ) d\vec{\theta}
+	\given{\Lambda, N }{\vec{d}} & = \given{N}{\Lambda, \vec{d}}\given{\Lambda}{\vec{d}}                    \\
+	                             & = e^{-\ndet}(\ndet)^{\nobs} \pi(N) \pi(\Lambda) \alpha(\Lambda)^{-\nobs}
+	\prod_{i=1}^{\nobs} \int \given{\vec{d_i}}{\theta} \ppop(\theta | \Lambda ) d\theta
 \end{align}
 
 If a prior $\pi(N) \propto 1/N$ is assumed on the population rate, then the posterior can be
@@ -370,20 +369,42 @@ such that the full posterior becomes
 
 \begin{equation}
 	\label{eq:stat:full-hierarchical-posterior}
-	\given{\vec{\Lambda}, N }{\vec{d}} = \pi(\vec{\Lambda}) \alpha(\vec{\Lambda})^{-\nobs}
-	\prod_{i=1}^{\nobs} \int \given{\vec{d_i}}{\vec{\theta}} \ppop(\vec{\theta} | \vec{\Lambda} ) d\vec{\theta}
+	\given{\Lambda}{\vec{d}} = \pi(\Lambda) \alpha(\Lambda)^{-\nobs}
+	\prod_{i=1}^{\nobs} \int \given{\vec{d_i}}{\theta} \ppop(\theta | \Lambda ) d\theta
 \end{equation}
 
 So far, the framework we developed has been general; we now specify to the gravitational wave case.
-The individual event parameters $\vec{\theta}$ describe the compact binary coalescence (CBC): the
+The individual event parameters $\theta$ describe the compact binary coalescence (CBC): the
 individual masses and spins, sky position, polarization, inclination angle, luminosity distance,
-and redshift. The population parameters $\vec{\Lambda}$ can be split into three groups: mass, rate
-and cosmological parameters. The mass parameters specify the GW mass model, such as minimum and
-maximum mass, slopes, the positions of any features in the mass distribution function, etc. These
-are used in the spectral siren method. The rate parameters are used in the model to describe how
-the CBC merger rate evolves with redshift. Finally, the cosmological parameters are the constants
-which appear in Eq.~\eqref{eq:intro:distance-redshift-relation}, namely $\{H_0, \Omega_m,
-	\Omega_{de}, w\}$.
+and redshift. The population parameters $\Lambda$ can be split into three groups: mass, rate and
+cosmological parameters. The mass parameters specify the GW mass model, such as minimum and maximum
+mass, slopes, the positions of any features in the mass distribution function, etc. These are used
+in the spectral siren method. The rate parameters are used in the model to describe how the CBC
+merger rate evolves with redshift. Finally, the cosmological parameters are the constants which
+appear in Eq.~\eqref{eq:intro:distance-redshift-relation}, namely $\{H_0, \Omega_m, \Omega_{de},
+	w\}$.
+
+\subsection{The single-event likelihood}
+
+The single-event likelihood $\given{\vec{d}_i}{\theta}$ is generally not explicitly modelled in
+population studies. Instead, one uses samples drawn from the single-event \textit{posterior}
+distribution
+
+\begin{equation}
+	\given{\theta}{\vec{d}_i} = \frac{\given{\vec{d}_i}{\theta} \pi(\theta)}{p(\vec{d}_i)},
+\end{equation}
+
+where $\pi(\theta)$ is the prior used in the single-event parameter estimation, and $p(\vec{d}_i)$
+is the evidence. With samples $\theta_j \sim \given{\theta}{\vec{d}_i}$ at hand, the integral on
+the numerator of Eq.~\eqref{eq:stat:full-hierarchical-posterior} can be estimated with
+
+\begin{align}
+	\int \given{\vec{d}_i}{\theta} \ppop(\theta | \Lambda ) d\theta & = p(\vec{d}_i)\int \frac{\given{\theta}{\vec{d}_i}}{\pi(\theta)} \ppop(\theta | \Lambda ) d\theta                                                                             \\
+	                                                                & \simeq \frac{p(\vec{d}_i)}{N_\text{samples}} \sum_{j=1}^{N_\text{samples}} \frac{\ppop(\theta_j | \Lambda )}{\pi(\theta_j)} \Big |_{\theta_j \sim \given{\theta}{\vec{d}_i}}.
+\end{align}
+
+The evidence $p(\vec{d}_i)$ enters into the above equation as a multiplicative factor, which can be
+ignored if one is not interested in the overall normalization.
 
 \subsection{A simplified approach}
 \label{sec:stat:simplified}
@@ -392,18 +413,18 @@ In this section, we reproduce the formalism developed in HG23. In that paper, th
 mock data analysis of the dark siren approach using the galaxy catalog method to demonstrate its
 capability to recover an unbiased posterior for $H_0$. They consider that the remaining
 cosmological parameters, such as $\Omega_m$ and $w_\text{DE}$, are fixed to fiducial values. They
-make a series of simplifying assumptions on $p_{det}$, $p_{pop}$ and
-$\given{\vec{d}}{\vec{\theta}}$, which we discuss below.
+make a series of simplifying assumptions on $p_{det}$, $p_{pop}$ and $\given{\vec{d}}{\theta}$,
+which we discuss below.
 
 The selection effects, encoded in the $\alpha (\Lambda )$ term from Eq.~\eqref{eq:stat:nalpha}, not
 only depend on the underlying population modelling prior $\ppop$, but they are also affected by the
 (sky-dependent) GW detector sensitivity and detector-frame mass. A complete analytical treatment is
 thus intractable. Hence, the detection efficiency must be estimated by drawing synthetic objects
 from a fiducial distribution, $p_\text{draw}(\theta)$, drawing corresponding data from the
-likelihood function $\given{\vec{d}}{\vec{\theta}}$, and “injecting” these data into the pipeline
-used to produce the GW event catalog, recording which observations are detected. The number of
-required injections to estimate the selection function precisely enough scales linearly with the
-size of the event catalog~\cite{essick2022precision}.
+likelihood function $\given{\vec{d}}{\theta}$, and “injecting” these data into the pipeline used to
+produce the GW event catalog, recording which observations are detected. The number of required
+injections to estimate the selection function precisely enough scales linearly with the size of the
+event catalog~\cite{essick2022precision}.
 
 Instead, we make the following simplification: detection is assumed to happen if the
 \textit{measured} luminosity distance is smaller than a threshold, $d_L^{\rm{th}}$. If the GW
@@ -425,8 +446,8 @@ then the detection probability can be expressed analytically with Eq.~\eqref{eq:
 where erf is the unilateral error function of the standard normal distribution. The uncertainty
 $\sigma_{d_L}$ is taken to be a constant fraction of $d_L$, such that $\sigma_{d_L} / d_L = C < 1$.
 
-The galaxy catalog information is used to compute the population model prior $\ppop(\vec{\theta} |
-	\vec{\Lambda}) = \ppop(z | H_0)$. Each galaxy in the catalog contributes with a term
+The galaxy catalog information is used to compute the population model prior $\ppop(\theta |
+	\Lambda) = \ppop(z | H_0)$. Each galaxy in the catalog contributes with a term
 
 \begin{equation}
 	\mathcal{L}_\text{EM}(\hat{z}_i | z_i)p(z_i | H_0),
@@ -505,7 +526,7 @@ The merger rate density over redshift $\mathcal{R}(z)$ enters the hierarchical p
 Eq.~\eqref{eq:stat:full-hierarchical-posterior}, as a factor of the population prior
 
 \begin{equation}
-	\given{z}{\vec{\Lambda}} = \frac{\mathcal{R}(z)}{\int \mathcal{R}(\tilde{z}) d\tilde{z}}
+	\given{z}{\Lambda} = \frac{\mathcal{R}(z)}{\int \mathcal{R}(\tilde{z}) d\tilde{z}}
 \end{equation}
 
 \section{Method}
@@ -593,13 +614,13 @@ in Eq.~\eqref{eq:stat:perfect-redshift-posterior}, although it becomes important
 where redshift uncertainty is incorporated into the analysis.
 
 A number of approximations were also made in our likelihood model. The GW likelihood
-$\given{\vec{d}}{\vec{\theta}}$ does not, in general, follow a normal distribution. In real
-analyses, while a similar ansatz can be used for the conditional probability of the distance to the
-event given a sky direction~\cite{Singer_2016}, a more accurate procedure is to apply Bayes's
-theorem and to discretely sample the posterior $\given{\vec{\theta}}{\vec{d}}$ reconstructed in the
-single-event parameter estimation with assumed prior $\pi (\vec{\theta})$~\cite{Mandel:2018mve}.
-Likewise, the photo$-z$ PDF may be more complicated than Eq.~\eqref{eq:stat:photo-z-likelihood},
-and can be estimated with more sophisticated methods, such as neural
+$\given{\vec{d}}{\theta}$ does not, in general, follow a normal distribution. In real analyses,
+while a similar ansatz can be used for the conditional probability of the distance to the event
+given a sky direction~\cite{Singer_2016}, a more accurate procedure is to apply Bayes's theorem and
+to discretely sample the posterior $\given{\theta}{\vec{d}}$ reconstructed in the single-event
+parameter estimation with assumed prior $\pi (\theta)$~\cite{Mandel:2018mve}. Likewise, the
+photo$-z$ PDF may be more complicated than Eq.~\eqref{eq:stat:photo-z-likelihood}, and can be
+estimated with more sophisticated methods, such as neural
 networks~\cite{Palmese_2023,alfradique2023dark}. Moreover, as already mentioned, a more realistic
 computation of the selection effects involves injecting artificial signals and computing the number
 of detections at the selected sensitivity. Finally, when using real GW data, the set of candidate
