@@ -67,6 +67,7 @@ nofootinbib,
 \newcommand{\dgw}[0]{\vec{d}_{\text{GW}}}
 \newcommand{\dem}[0]{\vec{d}_{\text{EM}}}
 \newcommand{\ind}[1]{\mathds{1}_{\{ #1 \}}}
+\newcommand{\bv}[1]{{\color{red}{[BV: #1]}}}
 \newcommand{\rs}[1]{{\color{green}{#1}}}
 \newcommand{\be}{\begin{equation}}
 \newcommand{\ee}{\end{equation}}
@@ -373,6 +374,27 @@ such that the full posterior becomes
 	\prod_{i=1}^{\nobs} \int \given{\vec{d_i}}{\theta} \ppop(\theta | \Lambda ) d\theta
 \end{equation}
 
+The single-event likelihood $\given{\vec{d}_i}{\theta}$ is generally not explicitly modelled in
+population analyses. Instead, one uses samples drawn from the single-event \textit{posterior}
+distribution
+
+\begin{equation}
+	\given{\theta}{\vec{d}_i} = \frac{\given{\vec{d}_i}{\theta} \pi(\theta)}{p(\vec{d}_i)},
+\end{equation}
+
+where $\pi(\theta)$ is the prior used in the single-event parameter estimation, and $p(\vec{d}_i)$
+is the evidence. With $N_{\text{samples},i}$ samples $\theta_j \sim \given{\theta}{\vec{d}_i}$ at
+hand, the integral on the numerator of Eq.~\eqref{eq:stat:full-hierarchical-posterior} can be
+estimated with
+
+\begin{align}
+	\int \given{\vec{d}_i}{\theta} \ppop(\theta | \Lambda ) d\theta & = p(\vec{d}_i)\int \frac{\given{\theta}{\vec{d}_i}}{\pi(\theta)} \ppop(\theta | \Lambda ) d\theta                                                                                     \\
+	                                                                & \simeq \frac{p(\vec{d}_i)}{N_{\text{samples},i}} \sum_{j=1}^{N_{\text{samples},i}} \frac{\ppop(\theta_j | \Lambda )}{\pi(\theta_j)} \Big |_{\theta_j \sim \given{\theta}{\vec{d}_i}}.
+\end{align}
+
+The evidence $p(\vec{d}_i)$ enters into the above equation as a multiplicative factor, which can be
+ignored if one is not interested in the overall normalization.
+
 So far, the framework we developed has been general; we now specify to the gravitational wave case.
 The individual event parameters $\theta$ describe the compact binary coalescence (CBC): the
 individual masses and spins, sky position, polarization, inclination angle, luminosity distance,
@@ -384,27 +406,63 @@ merger rate evolves with redshift. Finally, the cosmological parameters are the 
 appear in Eq.~\eqref{eq:intro:distance-redshift-relation}, namely $\{H_0, \Omega_m, \Omega_{de},
 	w\}$.
 
-\subsection{The single-event likelihood}
+\subsection{The population prior: the gravitational-wave case}
+\label{sec:population-prior}
 
-The single-event likelihood $\given{\vec{d}_i}{\theta}$ is generally not explicitly modelled in
-population studies. Instead, one uses samples drawn from the single-event \textit{posterior}
-distribution
+The population prior probability $\given{\theta}{\Lambda}$ encodes our assumptions on the
+population model.
+
+\subsubsection{Merger rate models}
+
+In this section, we analyse the dependence of $\given{\theta}{\Lambda}$ on redshift. It is useful
+to write $\theta = \{\theta', z \}$ and split the population prior as a product of two terms,
 
 \begin{equation}
-	\given{\theta}{\vec{d}_i} = \frac{\given{\vec{d}_i}{\theta} \pi(\theta)}{p(\vec{d}_i)},
+	\given{\theta}{\Lambda} = \given{\theta'}{z, \Lambda} \given{z}{\Lambda}
 \end{equation}
 
-where $\pi(\theta)$ is the prior used in the single-event parameter estimation, and $p(\vec{d}_i)$
-is the evidence. With samples $\theta_j \sim \given{\theta}{\vec{d}_i}$ at hand, the integral on
-the numerator of Eq.~\eqref{eq:stat:full-hierarchical-posterior} can be estimated with
+We derive a simplified model to infer the BBH merger rate density ($\rm{Gpc}^{-3} \rm{yr}^{-1})$
+over redshift, $\given{z}{\Lambda}$. We first parametrize the merger rate per comoving volume as a
+curve following the shape of the star formation rate density~\cite{Madau:2014bja}
 
-\begin{align}
-	\int \given{\vec{d}_i}{\theta} \ppop(\theta | \Lambda ) d\theta & = p(\vec{d}_i)\int \frac{\given{\theta}{\vec{d}_i}}{\pi(\theta)} \ppop(\theta | \Lambda ) d\theta                                                                             \\
-	                                                                & \simeq \frac{p(\vec{d}_i)}{N_\text{samples}} \sum_{j=1}^{N_\text{samples}} \frac{\ppop(\theta_j | \Lambda )}{\pi(\theta_j)} \Big |_{\theta_j \sim \given{\theta}{\vec{d}_i}}.
-\end{align}
+\begin{equation}
+	R(z) \equiv \frac{dN}{dt_d dV_c} = R_0 [1 + (1 + z_p)^{-\alpha -\beta}]\frac{(1 + z)^{\alpha}}{1 + \left ( \frac{1 + z}{1 + z_p} \right)^{\alpha + \beta}},
+\end{equation}
 
-The evidence $p(\vec{d}_i)$ enters into the above equation as a multiplicative factor, which can be
-ignored if one is not interested in the overall normalization.
+where $t_d$ is the time coordinate in the detector frame, $V_c$ is the comoving volume, $R_0$ is
+the merger rate density at $z=0$, $\alpha$ is the increasing power law slope, $\beta$ is the
+decreasing power law slope, and $z_p$ is the approximate position of the peak of $R(z)$ in
+redshift. Setting $\alpha = \beta = 0$ is equivalent to treating the merger rate density as uniform
+in comoving volume. The merger rate density over redshift requires an additional Jacobian
+$dV_c/dz$,
+
+\begin{equation}
+	\mathcal{R}(z) \equiv \frac{dN}{dt_s dz} = \frac{dN}{dt_d dV_c} \frac{dt_d}{dt_s} \frac{dV_c}{dz} = \frac{1}{1 + z} \frac{dV_c}{dz} R(z),
+\end{equation}
+
+where $t_s$ is the time coordinate in the source frame, and $dV_c /dz$ is the differential comoving
+volume given by
+
+\begin{equation}
+	\frac{dV_c}{dz} =  \frac{4 \pi }{E(z)}\pa{\frac{c}{H_0}}^3 \pa{\int_0^z \frac{d\tilde{z}}{E(\tilde{z})}}^2.
+\end{equation}
+
+The differential comoving volume encodes the dependence of the merger rate on the cosmological
+model. The BBH merger rate is not expected to exactly trace the star formation rate because of the
+time delay between the formation of the progenitors and the
+merger~\cite{santoliquido_cosmic_2020,fishbach_time_2021,van_son_redshift_2022}. In what follows,
+we will adopt a simplified model where tiem delay is neglected.
+
+The merger rate density over redshift $\mathcal{R}(z)$ enters the hierarchical posterior,
+Eq.~\eqref{eq:stat:full-hierarchical-posterior}, as a factor of the population prior
+
+\begin{equation}
+	\given{z}{\Lambda} = \frac{\mathcal{R}(z)}{\int \mathcal{R}(\tilde{z}) d\tilde{z}}
+\end{equation}
+
+\subsubsection{Mass models}
+
+\bv{TODO}
 
 \subsection{A simplified approach}
 \label{sec:stat:simplified}
@@ -488,46 +546,6 @@ Alternatively, we model the photo-$z$ redshift likelihood as a gaussian,
 
 with $\sigma_z \sim \rm{min}\{0.033(1+z), 0.015\}$, following an empirical fit described in
 Ref.~\onlinecite{DES:2019ccw}.
-
-\subsection{Inferring the BBH merger rate}
-
-In this section, we derive a simplified model to infer the BBH merger rate density ($\rm{Gpc}^{-3}
-	\rm{yr}^{-1})$, and to assess whether it evolves with redshift or not. We parametrize the merger
-rate per comoving volume as a curve following the shape of the star formation rate
-density~\cite{Madau:2014bja}
-
-\begin{equation}
-	R(z) \equiv \frac{dN}{dt_d dV_c} = R_0 [1 + (1 + z_p)^{-\alpha -\beta}]\frac{(1 + z)^{\alpha}}{1 + \left ( \frac{1 + z}{1 + z_p} \right)^{\alpha + \beta}},
-\end{equation}
-
-where $t_d$ is the time coordinate in the detector frame, $V_c$ is the comoving volume, $R_0$ is
-the merger rate density at $z=0$, $\alpha$ is the increasing power law slope, $\beta$ is the
-decreasing power law slope, and $z_p$ is the approximate position of the peak of $R(z)$ in
-redshift. The merger rate density over redshift requires an additional Jacobian $dV_c/dz$,
-
-\begin{equation}
-	\mathcal{R}(z) \equiv \frac{dN}{dt_s dz} = \frac{dN}{dt_d dV_c} \frac{dt_d}{dt_s} \frac{dV_c}{dz} = \frac{1}{1 + z} \frac{dV_c}{dz} R(z),
-\end{equation}
-
-where $t_s$ is the time coordinate in the source frame, and $dV_c /dz$ is the differential comoving
-volume given by
-
-\begin{equation}
-	\frac{dV_c}{dz} =  \frac{4 \pi }{E(z)}\pa{\frac{c}{H_0}}^3 \pa{\int_0^z \frac{d\tilde{z}}{E(\tilde{z})}}^2.
-\end{equation}
-
-The differential comoving volume encodes the dependence of the merger rate on the cosmological
-model. The BBH merger rate is not expected to exactly trace the star formation rate because of the
-time delay between the formation of the progenitors and the
-merger~\cite{santoliquido_cosmic_2020,fishbach_time_2021,van_son_redshift_2022}. In what follows,
-we will adopt a simplified model where tiem delay is neglected.
-
-The merger rate density over redshift $\mathcal{R}(z)$ enters the hierarchical posterior,
-Eq.~\eqref{eq:stat:full-hierarchical-posterior}, as a factor of the population prior
-
-\begin{equation}
-	\given{z}{\Lambda} = \frac{\mathcal{R}(z)}{\int \mathcal{R}(\tilde{z}) d\tilde{z}}
-\end{equation}
 
 \section{Method}
 \label{sec:method}
