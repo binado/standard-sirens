@@ -389,6 +389,7 @@ estimated with
 
 \begin{align}
 	\int \given{\vec{d}_i}{\theta} \ppop(\theta | \Lambda ) d\theta & = p(\vec{d}_i)\int \frac{\given{\theta}{\vec{d}_i}}{\pi(\theta)} \ppop(\theta | \Lambda ) d\theta                                                                                     \\
+	\label{eq:stat:posterior-monte-carlo-sum}
 	                                                                & \simeq \frac{p(\vec{d}_i)}{N_{\text{samples},i}} \sum_{j=1}^{N_{\text{samples},i}} \frac{\ppop(\theta_j | \Lambda )}{\pi(\theta_j)} \Big |_{\theta_j \sim \given{\theta}{\vec{d}_i}}.
 \end{align}
 
@@ -398,32 +399,65 @@ ignored if one is not interested in the overall normalization.
 So far, the framework we developed has been general; we now specify to the gravitational wave case.
 The individual event parameters $\theta$ describe the compact binary coalescence (CBC): the
 individual masses and spins, sky position, polarization, inclination angle, luminosity distance,
-and redshift. The population parameters $\Lambda$ can be split into three groups: mass, rate and
+etc. The population parameters $\Lambda$ can be split into three groups: mass, rate and
 cosmological parameters. The mass parameters specify the GW mass model, such as minimum and maximum
 mass, slopes, the positions of any features in the mass distribution function, etc. These are used
 in the spectral siren method. The rate parameters are used in the model to describe how the CBC
-merger rate evolves with redshift. Finally, the cosmological parameters are the constants which
-appear in Eq.~\eqref{eq:intro:distance-redshift-relation}, namely $\{H_0, \Omega_m, \Omega_{de},
-	w\}$.
+merger rate evolves with redshift. Finally, the cosmological parameters are the constants appearing
+in Eq.~\eqref{eq:intro:distance-redshift-relation}, namely $\{H_0, \Omega_m, \Omega_{de}, w\}$.
 
-\subsection{The population prior: the gravitational-wave case}
+\subsection{The gravitational-wave population prior}
 \label{sec:population-prior}
 
 The population prior probability $\given{\theta}{\Lambda}$ encodes our assumptions on the
-population model.
+population model. In this section, we analyse the dependence of $\given{\theta}{\Lambda}$ on
+redshift. Strictly speaking, $z \notin \theta$, since it is not redshift but luminosity distance
+that is inferred in the single-event parameter estimation. In any case, we can marginalize the
+posterior probability in Eq.~\eqref{eq:stat:full-hierarchical-posterior} over $z$:
+
+\begin{align}
+	\given{\Lambda}{\vec{d}} & = \pi(\Lambda) \alpha(\Lambda)^{-\nobs}
+	\prod_{i=1}^{\nobs} \int \given{\vec{d_i}}{\theta} \given{\theta, z}{\Lambda} d\theta dz \\
+	                         & =  \pi(\Lambda) \alpha(\Lambda)^{-\nobs}
+	\prod_{i=1}^{\nobs} \int \given{\vec{d_i}}{\theta} \given{\theta}{z, \Lambda} \given{z}{\Lambda} d\theta dz
+\end{align}
+
+Different methodologies will, in general, differ in the redshift prior $\given{z}{\Lambda}$.
+
+\bv{should we write $\given{\vec{d}}{\theta, z}$ instead of $\given{\vec{d}}{\theta}$? Including $z$ makes sense when differentiating between source-frame and detector-frame masses.
+	I have also seen other autors - see Refs.~\onlinecite{Mastrogiovanni:2023emh,gray2023joint} -
+	write $\given{\vec{d}}{\theta, z, \Lambda}$, as if the single-event likelihood depended on cosmological parameters as well.}
+
+\bv{
+	I do not understand why $\given{\theta}{z, \Lambda}$ does not contain a term $\delta(d_L - d_L(z, \Lambda))$ to constrain the luminosity distance to a specific cosmological model. For instance,
+
+	\begin{align}
+		\int \given{\vec{d}_i}{\theta} \given{\theta}{z, \Lambda} \given{z}{\Lambda} d\theta & =
+		\int \given{\vec{d}_i}{\theta} \given{\theta'}{d_L, z, \Lambda} \given{d_L}{z, \Lambda} \given{z}{\Lambda} dd_L dz d\theta'                                                                                                \\
+		                                                                                     & = \int \given{\vec{d}_i}{\theta} \given{\theta'}{d_L, z, \Lambda} \delta(d_L - d_L(z, \Lambda)) \given{z}{\Lambda} dd_L dz d\theta' \\
+		                                                                                     & = \int \given{\vec{d}_i}{\theta} \given{\theta'}{z, \Lambda} \given{z}{\Lambda} dz d\theta'
+	\end{align}
+
+	On the other hand, killing the integration over $d_L$ with the delta function will probably mess up
+	the likelihood $\given{\vec{d}_i}{\theta}$, as the latter it used to integrate over $\theta$ as a
+	Monte Carlo sum per Eq.~\eqref{eq:stat:posterior-monte-carlo-sum}.
+
+	Other authors ignore the $z-$dependence of $\theta$ in their models with the assumption that mass
+	and spin distributions do not evolve with redshift~\cite{Mastrogiovanni:2023emh,gray2023joint}.
+	Whether that argument is correct is debatable, but they do not mention anything about luminosity
+	distance either way. }
 
 \subsubsection{Merger rate models}
 
-In this section, we analyse the dependence of $\given{\theta}{\Lambda}$ on redshift. It is useful
-to write $\theta = \{\theta', z \}$ and split the population prior as a product of two terms,
+We derive a simplified model to infer the BBH merger rate density over redshift,
 
-\begin{equation}
-	\given{\theta}{\Lambda} = \given{\theta'}{z, \Lambda} \given{z}{\Lambda}
-\end{equation}
+\be
+\given{z}{\Lambda} = \frac{dN}{dt_s dz}(\Lambda).
+\ee
 
-We derive a simplified model to infer the BBH merger rate density ($\rm{Gpc}^{-3} \rm{yr}^{-1})$
-over redshift, $\given{z}{\Lambda}$. We first parametrize the merger rate per comoving volume as a
-curve following the shape of the star formation rate density~\cite{Madau:2014bja}
+The $\Lambda$ dependence will be made explicit below. We first parametrize the merger rate per
+comoving volume, in units $\rm{Gpc}^{-3} \rm{yr}^{-1}$, following the general fit of the star
+formation rate density~\cite{Madau:2014bja}
 
 \begin{equation}
 	R(z) \equiv \frac{dN}{dt_d dV_c} = R_0 [1 + (1 + z_p)^{-\alpha -\beta}]\frac{(1 + z)^{\alpha}}{1 + \left ( \frac{1 + z}{1 + z_p} \right)^{\alpha + \beta}},
@@ -451,7 +485,7 @@ The differential comoving volume encodes the dependence of the merger rate on th
 model. The BBH merger rate is not expected to exactly trace the star formation rate because of the
 time delay between the formation of the progenitors and the
 merger~\cite{santoliquido_cosmic_2020,fishbach_time_2021,van_son_redshift_2022}. In what follows,
-we will adopt a simplified model where tiem delay is neglected.
+we will adopt a simplified model where this time delay is neglected.
 
 The merger rate density over redshift $\mathcal{R}(z)$ enters the hierarchical posterior,
 Eq.~\eqref{eq:stat:full-hierarchical-posterior}, as a factor of the population prior
@@ -463,6 +497,20 @@ Eq.~\eqref{eq:stat:full-hierarchical-posterior}, as a factor of the population p
 \subsubsection{Mass models}
 
 \bv{TODO}
+
+\subsubsection{Using galaxy catalogs}
+
+Galaxy catalogs can be used to complement the redshift prior $\given{z}{\Lambda}$ with the idea
+that each galaxy is a candidate host for the CBC, and hence the merger's redshift is equal to that
+of the galaxy's. We can model the catalog data as an array
+
+\begin{equation}
+	\vec{d}_\text{cat} = (\text{ra}, \text{dec}, p(z), \{m_i\}),
+\end{equation}
+
+where the right ascension and declination are assumed to be perfectly known, $p(z)$ is the
+posterior probability distribution of the galaxy's redshift, and $\{m_i\}$ are the measured
+magnitudes in the different available bands.
 
 \subsection{A simplified approach}
 \label{sec:stat:simplified}
