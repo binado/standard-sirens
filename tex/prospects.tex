@@ -448,6 +448,7 @@ Different methodologies will, in general, differ in the redshift prior $\given{z
 	distance either way. }
 
 \subsubsection{Merger rate models}
+\label{sec:framework:merger-rate-models}
 
 We derive a simplified model to infer the BBH merger rate density over redshift,
 
@@ -501,8 +502,8 @@ Eq.~\eqref{eq:stat:full-hierarchical-posterior}, as a factor of the population p
 \subsubsection{Using galaxy catalogs}
 
 Galaxy catalogs can be used to complement the redshift prior $\given{z}{\Lambda}$ with the idea
-that each galaxy is a candidate host for the CBC, and hence the merger's redshift is equal to that
-of the galaxy's. We can model the catalog data as an array
+that each galaxy is a candidate host for the CBC, and hence possibly determine the merger's true
+redshift. We can model the catalog data as an array
 
 \begin{equation}
 	\vec{d}_\text{cat} = (\text{ra}, \text{dec}, p(z), \{m_i\}),
@@ -511,6 +512,44 @@ of the galaxy's. We can model the catalog data as an array
 where the right ascension and declination are assumed to be perfectly known, $p(z)$ is the
 posterior probability distribution of the galaxy's redshift, and $\{m_i\}$ are the measured
 magnitudes in the different available bands.
+
+To include the galaxy catalog information in the formalism, we make the assumption that all mergers
+occur inside galaxies. Thus, the probability of finding a merger at redshift $z$ is equivalent to
+the probability of finding a galaxy at redshift $z$ and that such galaxy hosts a merger. We expect
+the former to trace the galaxy number density in the catalog, with the caveat that this quantity is
+direction-dependent, and that there may be galaxies missing from it. Both of these aspects must be
+accounted for in an unbiased analysis. Note that, in the limit that the catalog is empty, one
+generally treats the galaxy density as uniform in comoving volume, which was implicity done in
+Sec.~\ref{sec:framework:merger-rate-models}. The probability that a galaxy at redshift $z$ hosts a
+merger is expected to trace the merger rate density in comoving volume, $R(z)$, \bv{modulo a
+	transformation to source-frame time}.
+
+We can formally write
+
+\begin{equation}
+	\given{\Lambda}{\vec{d}} \propto \prod_{i=1}^{\nobs} \int \given{\vec{d_i}}{\theta} \given{\theta, \Omega, z, m, N_\text{gal}}{\Lambda} d\theta d\Omega  dz dm dN_\text{gal},
+\end{equation}
+
+where $N_\text{gal}$ is the number of galaxies, which is sensitive to redshift, sky location
+$\Omega$ and luminosity $m$. Note that we have split $\Omega$ from $\theta$, and we will write them
+separately for ease of notation. We now make the assumption that the individual-event parameters do
+not depend on $\Omega, m$ or $N_\text{gal}$:
+
+\begin{align}
+	\given{\Lambda}{\vec{d}} & \propto \prod_{i=1}^{\nobs} \int \given{\vec{d_i}}{\theta} \given{\theta}{\Omega, z, m, N_\text{gal}, \Lambda} \given{\Omega, z, m, N_\text{gal}}{\Lambda} d\theta d\Omega  dz dm dN_\text{gal}      \\
+	                         & \propto \prod_{i=1}^{\nobs} \int \given{\vec{d_i}}{\theta} \given{\theta}{z, \Lambda} \given{\Omega, z, m, N_\text{gal}}{\Lambda} d\theta d\Omega  dz dm dN_\text{gal}                               \\
+	                         & \propto \prod_{i=1}^{\nobs} \int \given{\vec{d_i}}{\theta} \given{\theta}{z, \Lambda} \given{N_\text{gal}}{\Omega, z, m, \Lambda} \given{\Omega, z, m}{\Lambda} d\theta d\Omega  dz dm dN_\text{gal} \\
+	                         & \propto \prod_{i=1}^{\nobs} \int \given{\vec{d_i}}{\theta} \given{\theta}{z, \Lambda} \given{N_\text{gal}, m}{\Omega, z, \Lambda} \given{z}{\Lambda} d\theta d\Omega  dz dm dN_\text{gal}
+\end{align}
+
+As previously mentioned, not all galaxies will be captured by the catalog. We write $N_\text{gal} =
+	N_\text{in} + N_\text{out}$:
+
+\begin{equation}
+	\given{z}{\Lambda} = \propto \prod_{i=1}^{\nobs} \sum_{g \in \{\text{in}, \text{out}\}} \int \given{\vec{d_i}}{\theta} \given{\theta}{z, \Lambda} \given{N_\text{g}}{\Omega, z, m, \Lambda} \given{z}{\Lambda} d\theta d\Omega  dz dm dN_\text{g}
+\end{equation}
+
+Let us analyze the in-catalog term.
 
 \subsection{A simplified approach}
 \label{sec:stat:simplified}
