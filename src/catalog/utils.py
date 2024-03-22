@@ -5,37 +5,13 @@ import healpy as hp
 DEFAULT_DATASETS = ["ra", "dec", "z", "mass", "skymap_indices"]
 
 
-def traverse_file(group, node, target):
-    if isinstance(node, dict):
-        for key, obj in node.items():
-            traverse_file(group[key], obj, target)
-    elif isinstance(node, list):
-        for dataset in node:
-            setattr(target, dataset, group[dataset][()])
-    elif isinstance(node, str):
-        setattr(target, node, group[node][()])
+class GalaxyCatalog:
+    def __init__(self, filename: str) -> None:
+        self.filename = filename
 
-
-def draw_galaxies(skymap, n_dir, alpha, n_min):
-    """
-    Return all galaxies within each randomly chosen n_dir directions.
-
-    Each direction is guaranteed to have at least n_min galaxies
-    """
-    # Generate large enough sample of directions as some might be rejected
-    n_sim = 10 * n_dir
-    theta = np.random.uniform(0, np.pi / 2, n_sim)
-    phi = np.random.uniform(0, 2 * np.pi, n_sim)
-
-    current_dir = 0
-    galaxies = []
-    for i in range(n_sim):
-        _, galaxies_at_direction = skymap.indices_at_direction(theta[i], phi[i], alpha)
-        if np.sum(galaxies_at_direction) > n_min:
-            current_dir += 1
-            galaxies.append(galaxies_at_direction)
-        if current_dir >= n_dir:
-            return galaxies
+    def get(self, dataset):
+        with h5py.File(self.filename, "r") as f:
+            return f[dataset][()]
 
 
 class Skymap:
@@ -59,22 +35,91 @@ class Skymap:
         """
         return hp.ang2pix(self.nside, np.pi / 2.0 - dec, ra, **kwargs)
 
-    def indices_at_direction(self, theta, phi, alpha):
+    def indices_at_pixels(self, pixels):
+        """
+        Return indices of galaxies located within given pixels
+        """
+        return np.isin(self._indices, pixels)
+
+    def average_at_pixel(self, array, pixel):
+        indices_at_pixel = self.indices_at_pixels([pixel])
+        return np.average(array[indices_at_pixel])
+
+    def pixels_at_direction(self, theta, phi, alpha):
         """
         Get all indices at an angular distance alpha from a sky direction
         (theta, phi).
         """
         center = hp.ang2vec(theta, phi)
         # Get corresponding HEALPIX pixels
-        ipix_within_disc = hp.query_disc(nside=self.nside, vec=center, radius=alpha)
-        indices_in_ipix_array = np.isin(self._indices, ipix_within_disc)
-        return ipix_within_disc, indices_in_ipix_array
+        return hp.query_disc(nside=self.nside, vec=center, radius=alpha)
+
+    @staticmethod
+    def bin_array(array, bins, **kwargs):
+        indices = np.digitize(array, bins, **kwargs)
+        nbins = len(bins)
+        masks = [indices == i for i in range(nbins)]
+        return masks
+
+    @staticmethod
+    def remove_mask(array, mask):
+        return np.ma.array(array, mask=mask).compressed()
 
 
-class GalaxyCatalog:
-    def __init__(self, filename: str) -> None:
-        self.filename = filename
+class LineOfSight:
+    """
+    Class that represents a group of galaxies in a given line of sight.
+    """
 
-    def get(self, dataset):
-        with h5py.File(self.filename, "r") as f:
-            return f[dataset][()]
+    def __init__(self, skymap, pixels) -> None:
+        # Create mask with objects in given pixels
+        self.indices = skymap.indices_at_pixels(pixels)
+        self.ngalaxies = np.sum(self.indices)
+        self.default_datasets = dict(z="z_cmb")
+        self.z = None
+        self.weights = None
+        self.p_gal = None
+
+    def fetch(self, catalog, strip_null=True, weights=None, **datasets):
+        """
+        Fetch catalog datasets for the given line of sight.
+        """
+        datasets.update(**self.default_datasets)
+        # Get full all-sky datasets
+        columns_at_los = {column: catalog.get(dataset)[self.indices] for column, dataset in datasets.items()}
+        # Build mask for LOS
+        mask = np.logical_and.reduce(np.array([np.isfinite(column) for column in columns_at_los.values()]))
+        if strip_null:
+            for column in columns_at_los:
+                columns_at_los[column] = columns_at_los[column][mask]
+        for column, dataset in columns_at_los.items():
+            setattr(self, column, dataset)
+
+        if weights is not None:
+            self.weights = columns_at_los[weights]
+
+
+def draw_galaxies(skymap: Skymap, n_dir: int, alpha, n_min: int):
+    """
+    Return all galaxies within each randomly chosen n_dir directions.
+
+    Each direction is guaranteed to have at least n_min galaxies
+    """
+    # Generate large enough sample of directions as some might be rejected
+    n_sim = 10 * n_dir
+    theta = np.random.uniform(0, np.pi / 2, n_sim)
+    phi = np.random.uniform(0, 2 * np.pi, n_sim)
+
+    current_dir = 0
+    lines_of_sight = []
+    for i in range(n_sim):
+        pixels = skymap.pixels_at_direction(theta[i], phi[i], alpha)
+        los = LineOfSight(skymap, pixels)
+        if los.ngalaxies > n_min:
+            lines_of_sight.append(los)
+            current_dir += 1
+
+        if current_dir >= n_dir:
+            break
+
+    return lines_of_sight
