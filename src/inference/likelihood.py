@@ -2,16 +2,11 @@ import abc
 import numpy as np
 from scipy.special import erf
 from scipy.integrate import simpson
-from .prior import Parameters, UniformPrior
-from .utils import (
-    flat_cosmology,
-    gaussian,
-    lognormal,
-    merger_rate,
-    low_redshift_merger_rate,
-    normalize,
-    luminosity_distance,
-)
+
+from src.inference.prior import Parameters, UniformPrior
+from src.inference.population import merger_rate_per_comoving_volume, low_redshift_merger_rate_per_comoving_volume
+from src.utils.math import gaussian, lognormal, normalize
+from src.utils.cosmology import flat_cosmology, luminosity_distance
 
 GW_LIKELIHOOD_DIST_OPTIONS = ("normal", "lognormal")
 
@@ -110,7 +105,7 @@ class DrawnGWInference(HierarchicalBayesianInference):
         return luminosity_distance(self.fiducial_cosmology, z)
 
     def redshift_sigma(self, z):
-        return np.minimum(0.033 * (1 + z), self.max_redshift_err)
+        return 0.03 * (1 + z)
 
     def redshift_likelihood(self, z, z_gal):
         """
@@ -221,6 +216,15 @@ class DrawnGWCatalogPhotozInference(DrawnGWInference):
     See Eq. (29)
     """
 
+    def p_gal(self, z, z_gal, weights=None):
+        p_gal_matrix = np.array([self.redshift_likelihood(z, z_gal_i) for z_gal_i in z_gal])
+        return np.dot(weights, p_gal_matrix)
+
+    def p_cbc2(self, z, z_gal, weights=None):
+        p_gal = self.p_gal(z, z_gal, weights)
+        z_prior = self.fiducial_cosmology.differential_comoving_volume(z).value / (1 + z)
+        return p_gal * z_prior
+
     def p_cbc(self, z, z_gal, weights=None):
         """
         Return \Sum_i p(z_gal_i | z) p_bg (z) p_rate (z)
@@ -248,7 +252,7 @@ class DrawnGWCatalogPhotozInference(DrawnGWInference):
 
         # Sum likelihood * prior on z for over galaxies
         p_cbc = np.dot(weights[galaxies_in_range], p_cbc) if weights is not None else np.sum(p_cbc, axis=0)
-        return normalize(p_cbc, z)
+        return p_cbc
 
     def gw_likelihood_array(self, dl, H0_array, z, p_rate):
         """
@@ -298,34 +302,21 @@ class DrawnGWCatalogPhotozInference(DrawnGWInference):
         return combine_posteriors(likelihood_matrix, H0_array)
 
 
-class DrawnGWMergerRatePriorInference(SamplingLikelihood, DrawnGWInference):
+class DrawnGWPopulationInference(SamplingLikelihood, DrawnGWInference):
     """
     Class implementing likelihood model using prior knowledge on the BBH merger rate per comoving volume.
 
     See arxiv:2103.14038
     """
 
-    def __init__(self, z, *args, low_redshift=False, **kwargs):
+    def __init__(self, z_prior, events, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.merger_rate = low_redshift_merger_rate if low_redshift else merger_rate
+        self.z = z_prior.z
+        self.z_prior = z_prior
+        self.events = events
 
         # Pre-computed quantities to speed up likelihood computation
-        self.dvc_dz_over_1pz = 4 * np.pi * self.fiducial_cosmology.differential_comoving_volume(z).value / (1 + z)
-        self.fiducial_dl_times_fiducial_H0 = self.luminosity_distance(z) * self.H0
-
-    def p_cbc(self, z, theta):
-        """
-        Return the merger rate prior on redshift, p(z|H0, alpha, beta, c)
-
-        Uses Madau-Dickinson-like binary formation rate
-        See https://arxiv.org/abs/2003.12152
-        """
-        # H0 dependence will cancel out in normalization
-        sfr = self.merger_rate(z, *theta)
-        # 1 + z factor in denominator accounts for the transformation from
-        # detector frame time to source frame time
-        p_cbc = self.dvc_dz_over_1pz * sfr
-        return normalize(p_cbc, z)
+        self.fiducial_dl_times_fiducial_H0 = self.luminosity_distance(self.z) * self.H0
 
     def selection_effects(self, true_dl, p_rate, z):
         """
@@ -334,21 +325,67 @@ class DrawnGWMergerRatePriorInference(SamplingLikelihood, DrawnGWInference):
         detection_prob = self.detection_probability(true_dl)
         return simpson(detection_prob * p_rate, z)
 
-    def likelihood(self, params, gw_dl_array, z):
+    def log_likelihood(self, params, *args):
         """
-        Compute multi-event likelihood.
+        Compute multi-event log-likelihood
 
-        Used for diagnostic purposes
+        params = {H_0, \alpha, \beta, c}
         """
-        H0, *theta = params
-        p_rate = self.p_cbc(z, theta)
+        H0, *theta = self.params(params)
         # dl contains a factor of 1/H0
         true_dl = self.fiducial_dl_times_fiducial_H0 / H0
+        # Compute redshift prior p(z | \Lambda). This depends only on population parameters
+        # and on H0 only up to a normalization constant
+        z_prior = self.z_prior(*theta)
         # This is a n_events x n_z array
-        numerator_over_z = np.array([self.gw_likelihood(gw_dl, true_dl) for gw_dl in gw_dl_array])
-        numerator = simpson(numerator_over_z * p_rate, z)
-        selection_effects = self.selection_effects(true_dl, p_rate, z)
-        return np.prod(numerator / selection_effects)
+        numerator_over_z = np.array([self.gw_likelihood(event.dl, true_dl) for event in self.events])
+        numerator = simpson(numerator_over_z * z_prior, self.z)
+        # TODO: compute selection effects more precisely
+        selection_effects = self.selection_effects(true_dl, z_prior, self.z)
+        log_like = np.log(numerator) - np.log(selection_effects)
+        return np.sum(log_like)
+
+
+class DrawnGWCatalogPopulationInference(SamplingLikelihood, DrawnGWInference):
+    """
+    Class implementing likelihood model using prior knowledge on the BBH merger rate per comoving volume.
+
+    See arxiv:2103.14038
+    """
+
+    def __init__(self, z_prior, events, *args, low_redshift=False, normalize_pcbc=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.merger_rate = (
+            low_redshift_merger_rate_per_comoving_volume if low_redshift else merger_rate_per_comoving_volume
+        )
+        self.normalize_pcbc = normalize_pcbc
+        self.z = z_prior.z
+        self.z_prior = z_prior
+
+        # Pre-computed quantities to speed up likelihood computation
+        self.dvc_dz_over_1pz = (
+            4 * np.pi * self.fiducial_cosmology.differential_comoving_volume(self.z).value / (1 + self.z)
+        )
+        self.fiducial_dl_times_fiducial_H0 = self.luminosity_distance(self.z) * self.H0
+
+        self.events = events
+        # Pre-compute catalog factor for each event
+        for event in self.events:
+            event.los.p_gal = self.p_gal(self.z, event.los.z, weights=event.los.weights)
+        self.p_gal_by_event = np.array([event.los.p_gal for event in self.events])
+
+    def p_gal(self, z, z_gal, weights=None):
+        if z_gal is None:
+            return 1
+        p_gal_matrix = np.array([self.redshift_likelihood(z, z_gal_i) for z_gal_i in z_gal])
+        return np.dot(weights, p_gal_matrix) if weights is not None else np.sum(p_gal_matrix, axis=0)
+
+    def selection_effects(self, true_dl, p_rate, z):
+        """
+        Return the estimated GW likelihood selection effects
+        """
+        detection_prob = self.detection_probability(true_dl)
+        return simpson(detection_prob * p_rate, z)
 
     def log_likelihood(self, params, *args):
         """
@@ -357,13 +394,15 @@ class DrawnGWMergerRatePriorInference(SamplingLikelihood, DrawnGWInference):
         params = {H_0, \alpha, \beta, c}
         """
         H0, *theta = self.params(params)
-        gw_dl_array, z = args
-        p_rate = self.p_cbc(z, theta)
         # dl contains a factor of 1/H0
         true_dl = self.fiducial_dl_times_fiducial_H0 / H0
+        # Compute redshift prior p(z | \Lambda). This depends only on population parameters
+        # and on H0 only up to a normalization constant
+        z_prior = self.z_prior(*theta)
         # This is a n_events x n_z array
-        numerator_over_z = np.array([self.gw_likelihood(gw_dl, true_dl) for gw_dl in gw_dl_array])
-        numerator = simpson(numerator_over_z * p_rate, z)
-        selection_effects = self.selection_effects(true_dl, p_rate, z)
+        numerator_over_z = np.array([self.gw_likelihood(event.dl, true_dl) * event.los.p_gal for event in self.events])
+        numerator = simpson(numerator_over_z * z_prior, self.z)
+        # TODO: compute selection effects more precisely
+        selection_effects = self.selection_effects(true_dl, z_prior, self.z)
         log_like = np.log(numerator) - np.log(selection_effects)
         return np.sum(log_like)
