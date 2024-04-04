@@ -4,8 +4,9 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.interpolate import CubicSpline
 
-from ..gw import utils
-from ..gw.coordinates import Spherical3DCoordinates, Cartesian3DCoordinates
+from .waveform import taylor_f2_waveform, taylor_f2_orientation
+from .coordinates import Spherical3DCoordinates, Cartesian3DCoordinates
+from .utils import snr, optimal_snr
 
 
 dirname = os.getcwd()
@@ -125,17 +126,17 @@ class Detector:
 
     def snr(self, h, k, f):
         sn = self.sn_interpolator(f)
-        return utils.snr(h, k, sn, f)
+        return snr(h, k, sn, f)
 
     def optimal_snr(self, h, f):
         sn = self.sn_interpolator(f)
-        return utils.optimal_snr(h, sn, f)
+        return optimal_snr(h, sn, f)
 
     def taylor_f2_waveform(self, m1, m2, dl, alpha, beta, psi, iota, f):
         fplus, fcross = self.position.pattern_function(alpha, beta, psi, iota)
-        return utils.taylor_f2_waveform(m1, m2, dl, f, iota, fplus, fcross)
+        return taylor_f2_waveform(m1, m2, dl, f, iota, fplus, fcross)
 
     def taylor_f2_waveform_fast(self, face_on_waveform, alpha, beta, psi, iota):
         fplus, fcross = self.position.pattern_function(alpha, beta, psi, iota)
-        orientation = utils.taylor_f2_orientation(iota, fplus, fcross)
+        orientation = taylor_f2_orientation(iota, fplus, fcross)
         return face_on_waveform * orientation
