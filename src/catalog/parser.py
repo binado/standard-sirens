@@ -108,9 +108,10 @@ class GLADECatalogTranslator:
             columns += list(cls.redshift.keys())
         if mass:
             columns += list(cls.mass_and_merger_rate.keys())
-        for band in bands:
-            if band in available_bands:
-                columns += list(cls.luminosity_bands[band].keys())
+        if bands is not None:
+            for band in bands:
+                if band in available_bands:
+                    columns += list(cls.luminosity_bands[band].keys())
 
         return columns
 
