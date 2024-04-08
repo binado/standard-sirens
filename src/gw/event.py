@@ -1,27 +1,59 @@
 from dataclasses import dataclass
 
 import numpy as np
-from src.catalog.utils import LineOfSight
-from src.utils.cosmology import luminosity_distance
+
+from .coordinates import Cartesian3DCoordinates, Spherical3DCoordinates
+from ..utils.cosmology import luminosity_distance
+
+default_spin_vector = np.array([0, 0, 0])
 
 
 @dataclass
 class GWEvent:
-    z: float = None
-    dl: float = None
-    m1s: float = None
-    m2s: float = None
-    los: LineOfSight = None
+    z: float
+    dl: float
+    m1s: float
+    m2s: float
+    position: Spherical3DCoordinates  # In geocentric frame
+    psi: float  # In geocentric frame
+    iota: float
+    t_coal: float = 0.0
+    phi_coal: float = 0.0
+    s1: Cartesian3DCoordinates = Cartesian3DCoordinates(default_spin_vector)
+    s2: Cartesian3DCoordinates = Cartesian3DCoordinates(default_spin_vector)
 
-    def m1d(self, z):
-        return self.m1s * (1 + z)
+    @property
+    def m1d(self):
+        return self.m1s * (1 + self.z)
 
-    def m2d(self, z):
-        return self.m2s * (1 + z)
+    @property
+    def m2d(self):
+        return self.m2s * (1 + self.z)
 
-    @staticmethod
-    def z_to_dl(cosmology, z):
-        return luminosity_distance(cosmology, z)
+    def z_to_dl(self, cosmology, z, **kwargs):
+        self.dl = luminosity_distance(cosmology, z, **kwargs)
+        return self.dl
+
+    def to_gwdali_dict(self):
+        theta, phi = self.position.angles
+        return {
+            "z": self.z,
+            "DL": self.dl * 1e-3,  # Gpc
+            "m1": self.m1d,
+            "m2": self.m2d,
+            "RA": np.degrees(phi),
+            "Dec": np.degrees(np.pi / 2 - theta),
+            "iota": self.iota,
+            "psi": self.psi,
+            "t_coal": self.t_coal,
+            "phi_coal": self.phi_coal,
+            "sx1": self.s1.x,
+            "sy1": self.s1.y,
+            "sz1": self.s1.z,
+            "sx2": self.s2.x,
+            "sy2": self.s2.y,
+            "sz2": self.s2.z,
+        }
 
 
 class GWEventGenerator:
