@@ -58,7 +58,7 @@ class Skymap:
     def bin_array(array, bins, **kwargs):
         indices = np.digitize(array, bins, **kwargs)
         nbins = len(bins)
-        masks = [indices == i for i in range(nbins)]
+        masks = [indices == i + 1 for i in range(nbins)]
         return masks
 
     @staticmethod
