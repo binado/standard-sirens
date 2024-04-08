@@ -3,8 +3,9 @@ from enum import Enum
 from dataclasses import dataclass
 import numpy as np
 from scipy.interpolate import CubicSpline
+import astropy.constants as const
 
-from .waveform import taylor_f2_waveform, taylor_f2_orientation
+from .waveform import FrequencyDomainWaveform
 from .coordinates import Spherical3DCoordinates, Cartesian3DCoordinates
 from .utils import snr, optimal_snr
 
@@ -49,6 +50,10 @@ class DetectorPosition:
     def rot2rad(self):
         return np.radians(self.rot)
 
+    @property
+    def shape2rad(self):
+        return np.radians(self.shape)
+
     def normal2detector(self) -> Spherical3DCoordinates:
         return Spherical3DCoordinates(self.theta, self.phi)
 
@@ -63,6 +68,11 @@ class DetectorPosition:
         # See Eq. 4.11 of de Souza, J. M. S. Late-time cosmology with third generation gravitational waves observatories.
         # (Rio Grande do Norte U., Universidade Federal do Rio Grande do Norte, Brasil, Rio Grande do Norte U., 2023).
         return np.arctan2(zvec * lvec - (nvec * lvec) * (zvec * nvec), zvec * nvec_cross_lvec)
+
+    def geocentric_to_detector_frame(self, alpha: float, beta: float):
+        nvec = Spherical3DCoordinates(alpha, beta).to_cartesian()  # Propagation direction
+        # Get alpha, beta in detector frame
+        return Spherical3DCoordinates.from_cartesian(nvec.rotate_frame(self.theta, self.phi, self.rot2rad)).angles
 
     def pattern_function(self, alpha: float, beta: float, psi: float, iota: float):
         """
@@ -91,23 +101,25 @@ class DetectorPosition:
             F+ and Fx
         """
         psi_detframe = self.psi_detector_frame(alpha, beta, psi, iota)
-        nvec = Spherical3DCoordinates(alpha, beta).to_cartesian()  # Propagation direction
         # Get alpha, beta in detector frame
-        alphad, betad = Spherical3DCoordinates.from_cartesian(
-            nvec.rotate_frame(self.theta, self.phi, self.rot2rad)
-        ).angles
+        alphad, betad = self.geocentric_to_detector_frame(alpha, beta)
         # Compute F+ and F# for psi = 0
+        sinshape = np.sin(self.shape2rad)
         cosalphad = np.cos(alphad)
         cos2betad = np.cos(2.0 * betad)
         sin2betad = np.sin(2.0 * betad)
-        fplus0 = 0.5 * (1.0 + cosalphad**2) * cos2betad
-        fcross0 = cosalphad * sin2betad
+        fplus0 = sinshape * 0.5 * (1.0 + cosalphad**2) * cos2betad
+        fcross0 = sinshape * cosalphad * sin2betad
         cos2psi = np.cos(2.0 * psi_detframe)
         sin2psi = np.sin(2.0 * psi_detframe)
         # Psi rotation
         fplus = fplus0 * cos2psi - fcross0 * sin2psi
         fcross = fplus0 * sin2psi + fcross0 * cos2psi
         return fplus, fcross
+
+    def arrival_time_delay(self, alpha, beta):
+        alphad, _ = self.geocentric_to_detector_frame(alpha, beta)
+        return const.R_earth.value * np.cos(alphad) / const.c.value
 
 
 def sensitivity_filepath(sensitivity):
@@ -124,19 +136,22 @@ class Detector:
         self._sn = f_sn[:, 1] ** 2
         self.sn_interpolator = CubicSpline(self._f, self._sn)
 
+    def psd(self, f: np.ndarray):
+        return self.sn_interpolator(f)
+
     def snr(self, h, k, f):
-        sn = self.sn_interpolator(f)
-        return snr(h, k, sn, f)
+        return snr(h, k, self.psd(f), f)
 
     def optimal_snr(self, h, f):
-        sn = self.sn_interpolator(f)
-        return optimal_snr(h, sn, f)
+        return optimal_snr(h, self.psd(f), f)
 
-    def taylor_f2_waveform(self, m1, m2, dl, alpha, beta, psi, iota, f):
+    def strain(self, waveform: FrequencyDomainWaveform, f: np.ndarray):
+        alpha, beta = waveform.gw.position.angles
+        psi, iota = waveform.gw.psi, waveform.gw.iota
         fplus, fcross = self.position.pattern_function(alpha, beta, psi, iota)
-        return taylor_f2_waveform(m1, m2, dl, f, iota, fplus, fcross)
-
-    def taylor_f2_waveform_fast(self, face_on_waveform, alpha, beta, psi, iota):
-        fplus, fcross = self.position.pattern_function(alpha, beta, psi, iota)
-        orientation = taylor_f2_orientation(iota, fplus, fcross)
-        return face_on_waveform * orientation
+        hplus, hcross = waveform.polarizations(f)
+        td = self.position.arrival_time_delay(alpha, beta)
+        t_coal = waveform.gw.t_coal
+        phi_coal = waveform.gw.phi_coal
+        external_phase = 2 * np.pi * f * (t_coal + td) - phi_coal
+        return (fplus * hplus + fcross * hcross) * np.exp(external_phase * 1.0j)
