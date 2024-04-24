@@ -15,6 +15,7 @@ Run MCMC on cosmological and merger rate parameters according to the likelihood 
 ## `cls`
 
 Compute auto and cross angular power spectra for different redshift bins in a given galaxy catalog. Currently implemented for the `GLADE+` catalog only. Outputs $c_\ell$ to a `hdf5` file.
+Uses the `namaster` code for pseudo-$c_\ell$ estimation (see [paper](https://arxiv.org/abs/1809.09603) and [repo](https://github.com/LSSTDESC/NaMaster)).
 
 An example with
 
