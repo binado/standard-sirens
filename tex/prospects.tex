@@ -109,19 +109,19 @@ nofootinbib,
 %display desired
 \maketitle
 
-%\tableofcontents
+\tableofcontents
 
 \section{\label{sec:introduction}Introduction} The idea of using gravitational waves (GWs) from compact binary mergers to measure
 cosmological parameters was first introduced by Bernard Schutz in 1986~\cite{Schutz:1986gp}. These
-signals directly provide a measurement of the luminosity distance measurement to the source, which
-is therefore independent of the cosmic distance ladder. With the addition of redshift information,
-measurements can therefore be made of those cosmological parameters which impact the expansion
-history of the Universe, such as the Hubble constant ($H_0$). This approach is independent of all
-other local measurements to date.
+signals directly provide a measurement of the luminosity distance to the source, which is therefore
+independent of the cosmic distance ladder. With the addition of redshift information, measurements
+can therefore be made of those cosmological parameters which impact the expansion history of the
+Universe. This approach is independent of all other local measurements to date.
 
 The standard siren method probes the expansion history of the universe with the distance-redshift
-relation, with which one can infer the cosmological parameters such as $H_0$ and the dark energy
-equation of state parameter $w$:~\cite{Hogg:1999ad}
+relation, with which one can infer the cosmological parameters such as the Hubble constant $H_0$,
+the present-day matter abundance $\Omega_m$ and the dark energy equation of state parameter
+$w$:~\cite{Hogg:1999ad}
 
 \begin{align}
 	\label{eq:intro:distance-redshift-relation}
@@ -137,9 +137,9 @@ Eq.~\eqref{eq:intro:distance-redshift-relation} requires specifying a cosmologic
 \subsection{Bright sirens}
 
 From the GW data, it is possible to infer the luminosity distance to the binary source, but not the
-redshift, as the latter is degenerate with the chirp mass in the GW waveform modelling. It is
-therefore necessary to complement the data with another source of information that provides the
-redshift measurement. Multi-messenger observations, such as neutron star mergers with
+redshift, as the latter is completely degenerate with the chirp mass in the GW characteristic
+waveform. It is therefore necessary to complement the data with another source of information that
+provides the redshift measurement. Multi-messenger observations, such as neutron star mergers with
 electromagnetic counterparts like short gamma-ray bursts or kilonovae, provide the most
 straight-forward measurement \cite{Holz:2005df,Dalal:2006qt}. An electromagnetic counterpart like a
 kilonova can typically be pinpointed to a specific galaxy, thereby identifying the host galaxy of
@@ -173,9 +173,9 @@ which are more important for closer sources, as was the case of GW170817 mention
 As stated above, almost all GW events have been detected without an EM counterpart. Selection
 effects play a role in this: optical transients from the CBCs are mostly expected in binary neutron
 star (BNS) mergers, which are more difficult to detect due to the smaller masses of the sources. At
-the same time, there are more galaxies at higher redshifts, where optical counterparts are more
-unlikely to be detected due to fainter signals and more significant noise from objects in the
-line-of-sight direction of the source.
+the same time, there are more galaxies present at higher redshifts where the comoving volume is
+larger, but their optical counterparts are less likely to be detected due to fainter signals and
+more significant noise from objects in the line-of-sight direction of the source.
 
 These \textit{dark sirens} can be used to probe the expansion of the universe provided that they
 are complemented with an external redshift measurement. In his original paper, Schutz suggested
@@ -239,14 +239,14 @@ Sec.~\ref{sec:conclusion}.
 
 \section{\label{sec:framework}Statistical framework}
 
-In gravitational-wave astronomy, one line of interest is extracting the distributional properties
-of a population of sources based on a set of observations which are drawn from that distribution.
-Any methodology that leads to unbiased estimates of the population parameters must simultaneously
-account for measurement uncertainties and selection effects. One way with which the latter affects
-the observed population is a Mamquist bias: the loudest or brightest sources are more likely to be
-detected. The standard formalism for extracting the true source population parameters by
-incorporating these biases in the analysis is frequently labeled as Hierarchical Bayesian
-inference, see~\cite{Loredo:2004nn,Mandel:2018mve,Vitale_2021}.
+In gravitational-wave astronomy, one interesting question is how to extract the distributional
+properties of a population of sources based on a set of observations which are drawn from that
+distribution. Any methodology that leads to unbiased estimates of the population parameters must
+simultaneously account for measurement uncertainties and selection effects. One way with which the
+latter affects the observed population is a Mamquist bias: the loudest or brightest sources are
+more likely to be detected. The standard formalism for extracting the true source population
+parameters by incorporating these biases in the analysis is frequently labeled as Hierarchical
+Bayesian inference, see~\cite{Loredo:2004nn,Mandel:2018mve,Vitale_2021}.
 
 In the discussion below, we will follow the framework outlined in Ref.~\onlinecite{Gair_2023}
 (hereinafter HG23), which is a pedagogical resource on the galaxy catalog approach.
@@ -639,6 +639,76 @@ Alternatively, we model the photo-$z$ redshift likelihood as a gaussian,
 
 with $\sigma_z \sim \rm{min}\{0.033(1+z), 0.015\}$, following an empirical fit described in
 Ref.~\onlinecite{DES:2019ccw}.
+
+\section{GW x Galaxy cross-correlations}
+
+In this section, we investigate the idea of using angular cross-correlations between GW and galaxy
+clustering to constrain cosmological parameters, first introduced in Ref.~\cite{Oguri_2016}. The
+general idea is to compute the angular cross-power spectrum between galaxy clustering and GW
+sources, for different bins in redshift space and in configuration space. It is expected that the
+cross power spectrum will peak for pairs of bins which actually realize the distance-redshift
+relation, thereby allowing us to constrain cosmological parameters.
+
+\subsection{Angular power spectrum estimators}
+
+The projection of the density contrast field $\delta_i(\bm{n}, x_i)$ for the tracer species $i \in
+	\{g, GW\}$ onto the celestial sphere can be decomposed in a basis of spherical harmonics,
+
+\begin{equation}
+	\delta_i, (\bm{n}) = \sum_{\ell = 0}^{\infty} \sum_{m = -\ell}^{\ell} a_{\ell m} Y_{\ell m}(\bm{n}).
+\end{equation}
+
+Using the orthonormal property of the basis functions $Y_{\ell m}(\bm{n})$ on the 2-sphere,
+
+\begin{equation}
+	\int Y_{\ell m} (\bm{n}) Y^*_{\ell' m'} (\bm{n}) d\Omega = \delta_{\ell \ell'} \delta_{m m'},
+\end{equation}
+
+one can find an explicit form for the $a_{\ell m}$ coefficients:
+
+\begin{equation}
+	a_{\ell m} = \int \delta_i, (\bm{n}) Y^*_{\ell m} (\bm{n}) d\Omega.
+\end{equation}
+
+The two-point function of these coefficients is defined by
+
+\begin{equation}
+	\langle a_{\ell m} a^*_{\ell' m'} \rangle = \delta_{\ell \ell'} \delta_{m m'} C_\ell,
+\end{equation}
+
+and the $C_\ell$ are the angular power spectrum multipoles.
+
+The power spectrum is a 2-point function defined on an ensemble average, and hence the best we can
+do is to use an estimator built from the data. An unbiased estimator of the angular power spectrum
+is the average of the $a_{\ell m}$ coefficients over $m$,
+
+\begin{equation}
+	\hat{C}_\ell = \frac{1}{2 \ell + 1} \sum_{m = -\ell}^{\ell} | a_{\ell m} | ^2.
+\end{equation}
+
+However, the above expression is valid only if the data are collected over the full sky. When this
+is not the case, for instance due to contamination from Milky Way foreground emission, the density
+contrast is convolved with a non-trivial window function $W(\bm{n})$ in the definition of the
+$\tilde{a}_{\ell m}$,
+
+\begin{equation}
+	\tilde{a}_{\ell m} = \int d \bm{n} \delta(\bm{n}) W(\bm{n}) Y^*_{\ell m}(\bm{n}),
+\end{equation}
+
+which define a pseudo-power spectrum estimator
+
+\begin{equation}
+	\tilde{C}_\ell = \frac{1}{2 \ell + 1} \sum_{m = -\ell}^{\ell} | \tilde{a}_{\ell m} | ^2,
+\end{equation}
+
+which does not correspond to the full-sky angular power spectrum, although the two can be related
+by a mixing matrix~\cite{Hivon:2001jp}, alowwing one to be obtained from the other. An
+implementation of the pseudo-$C_\ell$ method is available in the \texttt{NaMaster}
+package~\cite{Alonso:2018jzx}.
+
+Another method to estimate the angular power spectrum from partial-sky data is implemented in the
+\texttt{PolSpice}\footnote{See \url{http://www2.iap.fr/users/hivon/software/PolSpice/}.}
+code~\cite{Szapudi_2001,Chon:2003gx}.
 
 \section{Method}
 \label{sec:method}
