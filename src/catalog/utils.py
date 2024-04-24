@@ -66,6 +66,27 @@ class Skymap:
         return np.ma.array(array, mask=mask).compressed()
 
 
+class MaskedMap:
+    """
+    Class that represents a masked map for healpy visualization.
+    """
+
+    def __init__(self, full_map, mask=None, q=None, map_dtype=np.float64) -> None:
+        # Float conversion necessary for accomodating mask value
+        self.full_map = full_map.astype(map_dtype)
+        self.mask = self.compute_mask(mask, q)
+        # Filling these pixels with the special value for a mask in healpy
+        self.masked_map = np.ma.MaskedArray(self.full_map, ~self.mask, fill_value=hp.UNSEEN)
+        self.fsky = len(self.masked_map.compressed()) / len(self.full_map)
+
+    def compute_mask(self, mask=None, q=None):
+        if mask is not None:
+            return mask
+        if q is not None:
+            return self.full_map >= np.quantile(self.full_map, q)
+        raise ValueError
+
+
 class LineOfSight:
     """
     Class that represents a group of galaxies in a given line of sight.
