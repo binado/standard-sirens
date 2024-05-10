@@ -124,9 +124,9 @@ def main():
 
     # Construct uniform prior for free params
     mask = [label not in args.params for label in labels]
-    prior_min = np.ma.array(prior_min, mask=mask).compressed()
-    prior_max = np.ma.array(prior_max, mask=mask).compressed()
-    prior = UniformPrior(prior_min, prior_max)
+    pmin = np.ma.array(prior_min, mask=mask).compressed()
+    pmax = np.ma.array(prior_max, mask=mask).compressed()
+    prior = UniformPrior(pmin, pmax)
 
     # Define params to be used
     params = Parameters(labels, plot_labels, truths, **fixed_params)
