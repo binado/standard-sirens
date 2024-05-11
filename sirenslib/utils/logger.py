@@ -1,26 +1,28 @@
+import os
 import logging
 
-log_file = "inference.log"
+dirname = os.getcwd()
+DEFAULT_LOGFILE = os.path.join(dirname, "out.log")
 
 
-def logging_config(output_file: str = None):
+def logging_config(logfile: str = None):
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         force=True,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[logging.FileHandler(filename=output_file, mode="w"), logging.StreamHandler()],
+        handlers=[logging.FileHandler(filename=logfile, mode="w"), logging.StreamHandler()],
     )
 
 
-def get_logger(name: str, output_file: str = None, console=True):
+def get_logger(name: str, logfile: str = None, console=True):
     # logging.basicConfig(level=logging.INFO, force=True)  ## override Jupyter notebook logger
     logger = logging.getLogger(name)
-    formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     # Create file handler
-    if output_file is not None:
-        fh = logging.FileHandler(filename=output_file, encoding="utf-8")
-        fh.setLevel(logging.DEBUG)
+    if logfile is not None:
+        fh = logging.FileHandler(filename=logfile, encoding="utf-8")
+        fh.setLevel(logging.INFO)
 
         fh.setFormatter(formatter)
         logger.addHandler(fh)

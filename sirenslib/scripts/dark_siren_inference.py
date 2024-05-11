@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
 import os
-import logging
 import argparse
 from pprint import pformat
 from uuid import uuid4
@@ -13,11 +12,12 @@ from ..inference.likelihood import DrawnGWPopulationInference
 from ..inference.population import MadauDickinsonRedshiftPrior
 from ..inference.prior import Parameters, UniformPrior
 from ..inference.sampling import MCMCStrategy, NestedStrategy, SamplingRun, SAMPLING_STRATEGIES
-from ..utils.logger import logging_config
+from ..utils.logger import get_logger, DEFAULT_LOGFILE
 from ..utils.functions import list_to_str
 from ..utils.math import sample_from_func
 from ..utils.cosmology import luminosity_distance, flat_cosmology
 
+logger = get_logger(__name__, logfile=DEFAULT_LOGFILE)
 dirname = os.getcwd()
 
 # Default arguments
@@ -44,7 +44,6 @@ n_walkers = 32
 nsteps = 10000
 full_z = np.linspace(1e-4, 10.0, 2000)
 
-logger_output_file = "logs/scripts.log"
 output_dir = "data/runs"
 samples_dir = "data/samples"
 output_group = "mcmc"
@@ -131,10 +130,9 @@ def main():
     # Define params to be used
     params = Parameters(labels, plot_labels, truths, **fixed_params)
 
-    logging_config(logger_output_file)
     if verbose:
-        logging.info("Starting inference run for parameters %s with:", args.params)
-        logging.info(pformat(attrs))
+        logger.info("Starting inference run for parameters %s with:", args.params)
+        logger.info(pformat(attrs))
 
     # Generating events
     z_prior = MadauDickinsonRedshiftPrior(fiducial_cosmology, full_z)
@@ -142,10 +140,10 @@ def main():
     events = GWEventGenerator(dl_th).from_redshifts(fiducial_cosmology, z_sample, sigma_dl)[:nevents]
 
     if verbose:
-        logging.info("Mean generated redshift: %s", np.average(z_sample))
-        logging.info("Median generated redshift: %s", np.median(z_sample))
+        logger.info("Mean generated redshift: %s", np.average(z_sample))
+        logger.info("Median generated redshift: %s", np.median(z_sample))
     if verbose:
-        logging.info("%s events were generated", len(events))
+        logger.info("%s events were generated", len(events))
 
     inference = DrawnGWPopulationInference(
         z_prior, events, params, prior, fiducial_H0=fiducial_H0, sigma_dl=sigma_dl, dl_th=dl_th
@@ -176,8 +174,8 @@ def main():
         sampling_kwargs.update(maxiter=nsteps)
 
     if verbose:
-        logging.info("Starting %s", SAMPLING_STRATEGIES[args.strategy])
+        logger.info("Starting %s", SAMPLING_STRATEGIES[args.strategy])
     strategy.run(*sampling_args, **sampling_kwargs)
-    logging.info("Saving run summary to %s", output_filename)
+    logger.info("Saving run summary to %s", output_filename)
     sampling_run = SamplingRun(params, prior, strategy)
     sampling_run.save_to_json(output_filename, **attrs)

@@ -7,11 +7,11 @@ import logging
 import numpy as np
 
 from ..utils.io import write_to_hdf5
-from ..utils.logger import logging_config
+from ..utils.logger import get_logger, DEFAULT_LOGFILE
 from ..catalog.parser import GLADECatalogTranslator, GLADECatalogParser
 
 
-logging_config("logs/scripts.log")
+logger = get_logger(__name__, logfile=DEFAULT_LOGFILE)
 dirname = os.getcwd()
 
 
