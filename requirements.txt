@@ -8,4 +8,3 @@ scipy
 tqdm
 emcee
 dynesty
-pymaster
