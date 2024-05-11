@@ -35,7 +35,7 @@ pip install numpy && pip install .[pymaster]
 See [this discussion](https://github.com/LSSTDESC/NaMaster/pull/143) for why manually installing `numpy` first is required. If this approach throws errors, a simpler alternative may be to install it via the `conda-forge` [recipe](https://anaconda.org/conda-forge/namaster) (_not sure if it is up-to-date_).
 
 ```bash
-conda create -n [myenv] && conda activate [myenv]
+conda create -n [myenv] python=3.10 && conda activate [myenv]
 python -m pip install .
 conda install -c conda-forge namaster
 ```
