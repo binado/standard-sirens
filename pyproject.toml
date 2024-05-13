@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sirenslib"
+authors = [
+    { name = "Bernardo Veronese", email = "bernardo.veronese@edu.ufes.br" },
+]
+description = "Utility library for projects related to gravitational-wave standard sirens."
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.10"
+keywords = ["gravitational waves", "standard sirens", "cosmology"]
+license = { file = "LICENSE" }
+classifiers = ["Programming Language :: Python :: 3"]
+dynamic = ["dependencies", "version"]
+
+[project.urls]
+Homepage = "https://github.com/binado/standard-sirens"
+
+[project.scripts]
+sirenslib-cls = "sirenslib.scripts.cls:main"
+sirenslib-inference = "sirenslib.scripts.dark_siren_inference:main"
+sirenslib-parse_catalog = "sirenslib.scripts.parse_catalog:main"
+
+[project.optional-dependencies]
+pseudo-cl = ['pymaster']
+gwdali = ['gwdali']
+all = ['sirenslib[pseudo-cl, gwdali]']
+
+[tool.setuptools.packages.find]
+include = ['sirenslib*']
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
