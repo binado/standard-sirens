@@ -1,2 +1,2 @@
-def list_to_str(obj: list, sep=","):
+def list_to_str(obj, sep=","):
     return sep.join(map(str, obj))

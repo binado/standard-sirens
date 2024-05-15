@@ -5,7 +5,7 @@ dirname = os.getcwd()
 DEFAULT_LOGFILE = os.path.join(dirname, "out.log")
 
 
-def logging_config(logfile: str = None):
+def logging_config(logfile=None):
     logging.basicConfig(
         level=logging.INFO,
         force=True,
@@ -14,7 +14,7 @@ def logging_config(logfile: str = None):
     )
 
 
-def get_logger(name: str, logfile: str = None, console=True):
+def get_logger(name, logfile=None, console=True):
     # logging.basicConfig(level=logging.INFO, force=True)  ## override Jupyter notebook logger
     logger = logging.getLogger(name)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
