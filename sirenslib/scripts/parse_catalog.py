@@ -108,6 +108,6 @@ def main():
 
     # Build output file
     logging.info("Writing to output file")
-    output_data = {key: data for key, data in catalog.items()}
+    output_data = dict(catalog.items())
     write_to_hdf5(output, output_data, dtypes, attrs=dict(nside=nside, nest=nest), compression=args.compression)
     logging.info("Done!")
