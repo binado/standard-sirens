@@ -57,6 +57,8 @@ class GWEvent:
 
 
 class GWEventGenerator:
+    """TODO: class methods not yet updated to work with `gw.GWEvent`."""
+
     def __init__(self, z_draw_max=1.4, dl_th=1550) -> None:
         self.z_draw_max = z_draw_max
         self.dl_th = dl_th
@@ -93,7 +95,7 @@ class GWEventGenerator:
         detectable_dl = observed_dl[observed_dl < self.dl_th]
         return [GWEvent(dl=dl, **kwargs) for dl in detectable_dl]
 
-    def from_catalog(self, cosmology, los, sigma_dl, n_gw: int, weights=None):
+    def from_catalog(self, cosmology, los, sigma_dl, n_gw, weights=None):
         # z_gal is an array of galaxy redshifts in one sky direction
         # Merger probability on 0 < z < z_draw_max
         # Weighted by galaxy mass if weights is provided
