@@ -1,3 +1,6 @@
+"""TODO: This module is deprecated.
+"""
+
 from tqdm import tqdm
 import numpy as np
 from scipy.integrate import cumulative_trapezoid

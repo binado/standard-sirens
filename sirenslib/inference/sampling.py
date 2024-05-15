@@ -8,9 +8,6 @@ from dynesty import DynamicNestedSampler
 from dynesty.results import Results
 import json
 
-from .prior import Parameters, UniformPrior
-
-
 SAMPLING_STRATEGIES = {
     "mcmc": {"name": "MCMC", "format": "hdf5"},
     "nested": {"name": "Nested Sampling", "format": "pickle"},
@@ -37,7 +34,7 @@ class MCMCStrategy(SamplingStrategy):
     name = SAMPLING_STRATEGIES["mcmc"]
     format = "hdf5"
 
-    def __init__(self, nwalkers, ndim, logprob, filename=None, reset=False, **kwargs) -> None:
+    def __init__(self, nwalkers, ndim, logprob, filename=None, reset=False, **kwargs):
         super().__init__()
         self.nwalkers, self.ndim = nwalkers, ndim
         self.backend = None
@@ -51,7 +48,7 @@ class MCMCStrategy(SamplingStrategy):
     def run(self, *args, **kwargs):
         self.sampler.run_mcmc(*args, **kwargs)
 
-    def initial_around(self, a, var, prior: UniformPrior):
+    def initial_around(self, a, var, prior):
         if len(a) != self.ndim or len(var) != self.ndim or self.ndim != self.ndim:
             raise ValueError("'a', 'var' and 'prior' must have consistent dimensions with sampler")
 
@@ -77,7 +74,7 @@ class NestedStrategy(SamplingStrategy):
     name = SAMPLING_STRATEGIES["nested"]
     format = "pickle"
 
-    def __init__(self, loglike, prior: UniformPrior, filename=None, **kwargs) -> None:
+    def __init__(self, loglike, prior, filename=None, **kwargs):
         super().__init__()
         self.prior = prior
         self.ndim = prior.ndim
@@ -99,7 +96,18 @@ class NestedStrategy(SamplingStrategy):
 
 
 class SamplingRun:
-    def __init__(self, params: Parameters, prior: UniformPrior, strategy: SamplingStrategy):
+    def __init__(self, params, prior, strategy):
+        """Create a new SamplingRun instance.
+
+        Parameters
+        ----------
+        params : Parameters
+            The parameters of the model
+        prior : UniformPrior
+            The prior on the parameters
+        strategy : SamplingStrategy
+            The sampling strategy of choice
+        """
         self.params = params
         self.prior = prior
         self.strategy = strategy

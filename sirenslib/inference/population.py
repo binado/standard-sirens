@@ -34,7 +34,7 @@ class UniformComovingRedshiftPrior:
 
 
 class MadauDickinsonRedshiftPrior:
-    def __init__(self, cosmology, z) -> None:
+    def __init__(self, cosmology, z):
         self.z = z
         self.cosmology = cosmology
         # Pre-compute Jacobian (source-frame, z) -> (detector-frame, volume)

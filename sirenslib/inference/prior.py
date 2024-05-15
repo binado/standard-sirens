@@ -3,7 +3,7 @@ import numpy as np
 
 class Parameters:
 
-    def __init__(self, labels, plot_labels, truths=None, **fixed_params) -> None:
+    def __init__(self, labels, plot_labels, truths=None, **fixed_params):
         self.labels = labels
         self.plot_labels = plot_labels
         self.truths = list(truths)

@@ -3,7 +3,6 @@ import numpy as np
 from scipy.special import erf
 from scipy.integrate import simpson
 
-from sirenslib.inference.prior import Parameters, UniformPrior
 from sirenslib.inference.population import merger_rate_per_comoving_volume, low_redshift_merger_rate_per_comoving_volume
 from sirenslib.utils.math import gaussian, lognormal, normalize
 from sirenslib.utils.cosmology import flat_cosmology, luminosity_distance
@@ -42,7 +41,20 @@ def combine_posteriors(posterior_matrix, param_arr):
 
 
 class SamplingLikelihood(abc.ABC):
-    def __init__(self, params: Parameters, prior: UniformPrior, *args, **kwargs) -> None:
+    """Base class for likelihoods used in sampling methods.
+    TODO: replace it with `bilby.Likelihood`
+    """
+
+    def __init__(self, params, prior, *args, **kwargs):
+        """Create a new SamplingLikelihood instance.
+
+        Parameters
+        ----------
+        params : Parameters
+            Parameters of the model
+        prior : UniformPrior
+            Prior for the sampling parameters
+        """
         super().__init__(*args, **kwargs)
         self.params = params
         self.prior = prior
@@ -245,7 +257,7 @@ class DrawnGWCatalogPhotozInference(DrawnGWInference):
             p_cbc *= weights.reshape(-1, 1)
 
         # Normalize each z_gal entry
-        norm = simpson(p_cbc, z)
+        norm = simpson(p_cbc, x=z)
         # Discard zero norm galaxies: this happens because their redshifts falls outside [0, z_max] @ high sigma
         galaxies_in_range = np.nonzero(norm > 1e-6)
         p_cbc = p_cbc[galaxies_in_range] / norm[galaxies_in_range].reshape(-1, 1)
@@ -260,7 +272,7 @@ class DrawnGWCatalogPhotozInference(DrawnGWInference):
         """
         dl_by_H0_by_z_matrix = self.dl_from_H0_array_and_z(H0_array, z)
         integrand = self.gw_likelihood(dl, dl_by_H0_by_z_matrix) * p_rate
-        return simpson(integrand, z)
+        return simpson(integrand, x=z)
 
     def selection_effects(self, H0_array, z, p_rate):
         """
@@ -268,7 +280,7 @@ class DrawnGWCatalogPhotozInference(DrawnGWInference):
         """
         dl_by_H0_by_z_matrix = self.dl_from_H0_array_and_z(H0_array, z)
         detection_prob = self.detection_probability(dl_by_H0_by_z_matrix)
-        return simpson(detection_prob * p_rate, z)
+        return simpson(detection_prob * p_rate, x=z)
 
     def likelihood(self, gw_dl_array, H0_array, z, z_gal, n_dir=1, weights=None):
         n_H0 = H0_array.shape[0]
@@ -323,7 +335,7 @@ class DrawnGWPopulationInference(SamplingLikelihood, DrawnGWInference):
         Return the estimated GW likelihood selection effects
         """
         detection_prob = self.detection_probability(true_dl)
-        return simpson(detection_prob * p_rate, z)
+        return simpson(detection_prob * p_rate, x=z)
 
     def log_likelihood(self, params, *args):
         """
@@ -339,7 +351,7 @@ class DrawnGWPopulationInference(SamplingLikelihood, DrawnGWInference):
         z_prior = self.z_prior(*theta)
         # This is a n_events x n_z array
         numerator_over_z = np.array([self.gw_likelihood(event.dl, true_dl) for event in self.events])
-        numerator = simpson(numerator_over_z * z_prior, self.z)
+        numerator = simpson(numerator_over_z * z_prior, x=self.z)
         # TODO: compute selection effects more precisely
         selection_effects = self.selection_effects(true_dl, z_prior, self.z)
         log_like = np.log(numerator) - np.log(selection_effects)
@@ -385,7 +397,7 @@ class DrawnGWCatalogPopulationInference(SamplingLikelihood, DrawnGWInference):
         Return the estimated GW likelihood selection effects
         """
         detection_prob = self.detection_probability(true_dl)
-        return simpson(detection_prob * p_rate, z)
+        return simpson(detection_prob * p_rate, x=z)
 
     def log_likelihood(self, params, *args):
         """
@@ -401,7 +413,7 @@ class DrawnGWCatalogPopulationInference(SamplingLikelihood, DrawnGWInference):
         z_prior = self.z_prior(*theta)
         # This is a n_events x n_z array
         numerator_over_z = np.array([self.gw_likelihood(event.dl, true_dl) * event.los.p_gal for event in self.events])
-        numerator = simpson(numerator_over_z * z_prior, self.z)
+        numerator = simpson(numerator_over_z * z_prior, x=self.z)
         # TODO: compute selection effects more precisely
         selection_effects = self.selection_effects(true_dl, z_prior, self.z)
         log_like = np.log(numerator) - np.log(selection_effects)
