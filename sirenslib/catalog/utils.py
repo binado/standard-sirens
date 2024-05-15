@@ -8,7 +8,7 @@ DEFAULT_DATASETS = ["ra", "dec", "z", "mass", "skymap_indices"]
 
 
 class GalaxyCatalog:
-    def __init__(self, filename: str) -> None:
+    def __init__(self, filename):
         self.filename = filename
 
     def get(self, dataset):
@@ -17,7 +17,7 @@ class GalaxyCatalog:
 
 
 class Skymap:
-    def __init__(self, nside, ra, dec, **kwargs) -> None:
+    def __init__(self, nside, ra, dec, **kwargs):
         self.ra = ra
         self.dec = dec
         self.nside = nside
@@ -73,7 +73,7 @@ class MaskedMap:
     Class that represents a masked map for healpy visualization.
     """
 
-    def __init__(self, full_map, masks=None, q=None, map_dtype=np.float64) -> None:
+    def __init__(self, full_map, masks=None, q=None, map_dtype=np.float64):
         # Float conversion necessary for accomodating mask value
         self.full_map = full_map.astype(map_dtype)
         self.mask = self.compute_mask(masks, q)
@@ -107,7 +107,7 @@ class LineOfSight:
     Class that represents a group of galaxies in a given line of sight.
     """
 
-    def __init__(self, skymap, pixels) -> None:
+    def __init__(self, skymap, pixels):
         # Create mask with objects in given pixels
         self.indices = skymap.indices_at_pixels(pixels)
         self.ngalaxies = np.sum(self.indices)
