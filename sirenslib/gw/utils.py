@@ -86,7 +86,7 @@ def optimal_snr(h, sn, f):
     Returns
     -------
     float
-        Optimal signal-to-noise ration for h
+        Optimal signal-to-noise ratio for h
     """
     return np.sqrt(scalar_product(h, h, sn, f))
 
