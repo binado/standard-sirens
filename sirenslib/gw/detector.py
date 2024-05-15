@@ -5,7 +5,6 @@ import numpy as np
 from scipy.interpolate import CubicSpline
 import astropy.constants as const
 
-from .waveform import FrequencyDomainWaveform
 from .coordinates import Spherical3DCoordinates, Cartesian3DCoordinates
 from .utils import snr, optimal_snr
 
@@ -54,10 +53,28 @@ class DetectorPosition:
     def shape2rad(self):
         return np.radians(self.shape)
 
-    def normal2detector(self) -> Spherical3DCoordinates:
+    def normal2detector(self):
         return Spherical3DCoordinates(self.theta, self.phi)
 
-    def psi_detector_frame(self, alpha: float, beta: float, psi: float, iota: float) -> float:
+    def psi_detector_frame(self, alpha, beta, psi, iota):
+        """Return polarization angle in the detector frame.
+
+        Parameters
+        ----------
+        alpha : float
+            pi / 2 - declination of propagation direction in geocentric frame (radians)
+        beta : float
+            right ascension of propagation direction in geocentric frame (radians)
+        psi : float
+            Polarization angle in geocentric frame
+        iota : float
+            Inclination angle of angular momentum vector with respect to direction of propagation
+
+        Returns
+        -------
+        float
+            Polarization angle in detector frame
+        """
         zvec = self.normal2detector().to_cartesian()
         nvec = Spherical3DCoordinates(alpha, beta).to_cartesian()  # Propagation direction
         # \hat{N} x \hat{L} lies on x-y plane in propagation frame and makes an angle psi with x
@@ -69,12 +86,28 @@ class DetectorPosition:
         # (Rio Grande do Norte U., Universidade Federal do Rio Grande do Norte, Brasil, Rio Grande do Norte U., 2023).
         return np.arctan2(zvec * lvec - (nvec * lvec) * (zvec * nvec), zvec * nvec_cross_lvec)
 
-    def geocentric_to_detector_frame(self, alpha: float, beta: float):
+    def geocentric_to_detector_frame(self, alpha, beta):
+        """Return sky location coordinates in the detector frame.
+
+        Parameters
+        ----------
+        alpha : _type_
+            pi / 2 - declination of propagation direction in geocentric frame (radians)
+        beta : _type_
+            right ascension of propagation direction in geocentric frame (radians)
+
+        Returns
+        -------
+        alpha': float
+            pi / 2 - declination of propagation direction in detector frame (radians)
+        beta': float
+            right ascension of propagation direction in detector frame (radians)
+        """
         nvec = Spherical3DCoordinates(alpha, beta).to_cartesian()  # Propagation direction
         # Get alpha, beta in detector frame
         return Spherical3DCoordinates.from_cartesian(nvec.rotate_frame(self.theta, self.phi, self.rot2rad)).angles
 
-    def pattern_function(self, alpha: float, beta: float, psi: float, iota: float):
+    def pattern_function(self, alpha, beta, psi, iota):
         """
         Return the detector's pattern functions F+ and Fx given its position and orientation.
         Implemented for interferometers only.
@@ -87,9 +120,9 @@ class DetectorPosition:
         Parameters
         ----------
         alpha : float
-            pi / 2 - declination of propagation direction (radians)
+            pi / 2 - declination of propagation direction in geocentric frame (radians)
         beta : float
-            right ascension of propagation direction (radians)
+            right ascension of propagation direction in geocentric frame (radians)
         psi : float
             Polarization angle in geocentric frame
         iota : float
@@ -97,8 +130,10 @@ class DetectorPosition:
 
         Returns
         -------
-        list
-            F+ and Fx
+        fplus: float
+            F+ antenna response
+        fcross: float
+            Fx antenna response
         """
         psi_detframe = self.psi_detector_frame(alpha, beta, psi, iota)
         # Get alpha, beta in detector frame
@@ -123,25 +158,51 @@ class DetectorPosition:
 
 
 def sensitivity_filepath(sensitivity):
-    return os.path.join(dirname, f"sensitivity/{sensitivity.value}.txt")
+    return os.path.join(dirname, f"sirenslib/sensitivity/{sensitivity.value}.txt")
 
 
 class Detector:
-    def __init__(self, name: str, position: DetectorPosition, sensitivity: DetectorSensitivities) -> None:
+    """Class representing an inteferometer."""
+
+    def __init__(self, name, position, sensitivity):
+        """Create a new Detector instance.
+
+        Parameters
+        ----------
+        name : str
+            The name of the dectector
+        position : DetectorPosition
+            A DetectorPosition instance representing the detector's position on Earth
+        sensitivity : DetectorSensitivities
+            An option from the DetectorSensitivities enum
+
+
+        Examples
+        --------
+        ```python
+        lh_position = DetectorPosition(*DetectorCoordinates.LIGO_HANFORD.value)
+        lh = Detector(DetectorCoordinates.LIGO_HANFORD.name, lh_position, DetectorSensitivities.LIGO_O4_HIGH)
+
+        ll_position = DetectorPosition(*DetectorCoordinates.LIGO_LIVINGSTON.value)
+        ll = Detector(DetectorCoordinates.LIGO_LIVINGSTON.name, ll_position, DetectorSensitivities.LIGO_O4_HIGH)
+        ```
+        """
         self.name = name
         self.position = position
         self.sensitivity_file = sensitivity_filepath(sensitivity)
         f_sn = np.loadtxt(self.sensitivity_file)
         self._f = f_sn[:, 0]
-        self_psd = f_sn[:, 1]
+        self._psd = f_sn[:, 1]
         self._sn = self._psd**2
         self.sn_interpolator = CubicSpline(self._f, self._sn)
         self.psd_interpolator = CubicSpline(self._f, self._psd)
 
-    def sn(self, f: np.ndarray):
+    def sn(self, f):
+        """Return square of the Power Spectral Density for the frequency array f"""
         return self.sn_interpolator(f)
 
-    def psd(self, f: np.ndarray):
+    def psd(self, f):
+        """Return Power Spectral Density for the frequency array f"""
         return self.psd_interpolator(f)
 
     def snr(self, h, k, f):
@@ -150,7 +211,21 @@ class Detector:
     def optimal_snr(self, h, f):
         return optimal_snr(h, self.sn(f), f)
 
-    def strain(self, waveform: FrequencyDomainWaveform, f: np.ndarray):
+    def strain(self, waveform, f):
+        """Generate the detector strain from a given waveform
+
+        Parameters
+        ----------
+        waveform : FrequencyDomainWaveform
+            See `gw.waveform`
+        f : ndarray
+            Frequency array
+
+        Returns
+        -------
+        ndarray, complex
+            Detector strain in the frequency range defined by f
+        """
         alpha, beta = waveform.gw.position.angles
         psi, iota = waveform.gw.psi, waveform.gw.iota
         fplus, fcross = self.position.pattern_function(alpha, beta, psi, iota)

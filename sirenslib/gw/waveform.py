@@ -5,7 +5,6 @@ from astropy import constants as const
 from astropy import units as u
 
 from .utils import symmetric_mass_ratio, mchirp
-from .event import GWEvent
 
 TAYLOR_F2_IMPLEMENTED_PN_ORDER = 3.5
 mpc_to_m = 1e6 * u.pc.to(u.m)
@@ -15,7 +14,11 @@ c = const.c.value
 
 
 class FrequencyDomainWaveform(ABC):
-    def __init__(self, event: GWEvent) -> None:
+    """
+    Base class for frequency-domain waveform approximants.
+    """
+
+    def __init__(self, event):
         super().__init__()
         self._event = event
         self.f_isco = None
@@ -24,20 +27,42 @@ class FrequencyDomainWaveform(ABC):
     def gw(self):
         return self._event
 
+    @property
+    def f_isco(self):
+        mtot = msun * (self.gw.m1d + self.gw.m2d)
+        risco = 6 * G * mtot / c**2
+        return np.sqrt(G * mtot / risco**3) / np.pi
+
     @abstractmethod
-    def polarizations(self, f: np.ndarray):
+    def polarizations(self, f):
         pass
 
 
 class TaylorF2(FrequencyDomainWaveform):
-    def __init__(self, event: GWEvent, pn_order=TAYLOR_F2_IMPLEMENTED_PN_ORDER) -> None:
+    """Class implementing the TaylorF2 frequency-domain waveform approximant."""
+
+    def __init__(self, event, pn_order=TAYLOR_F2_IMPLEMENTED_PN_ORDER):
+        """Create a new TaylorF2 instance.
+
+        Parameters
+        ----------
+        event : GWEvent
+        pn_order : float, optional
+            The order of the Post-Newtonian expansion, should be a half integer.
+            By default TAYLOR_F2_IMPLEMENTED_PN_ORDER
+
+        Raises
+        ------
+        NotImplementedError
+            if pn_order is greater than TAYLOR_F2_IMPLEMENTED_PN_ORDER
+        """
         super().__init__(event)
         if pn_order > TAYLOR_F2_IMPLEMENTED_PN_ORDER:
             raise NotImplementedError
 
         self.pn_order = pn_order
 
-    def amplitude(self, f: np.ndarray):
+    def amplitude(self, f):
         gw = self.gw
         mchirp_in_kg = msun * mchirp(gw.m1d, gw.m2d)
         dl_in_m = gw.dl * mpc_to_m
@@ -45,7 +70,7 @@ class TaylorF2(FrequencyDomainWaveform):
         amp = (G * mchirp_in_kg) ** (5 / 6) * np.sqrt(5 / 24 / c**3) / dl_in_m / np.pi ** (2 / 3)
         return amp * f ** (-7 / 6)
 
-    def phase_expansion(self, f: np.ndarray):
+    def phase_expansion(self, f):
         # Computing phase \Phi(f) up to 3.5 PN
         # Expansion on x = \pi G M f / c^3
         gw = self.gw
@@ -78,7 +103,7 @@ class TaylorF2(FrequencyDomainWaveform):
         phase *= 3 / 128 / eta / np.power(x, 5 / 3)
         return phase
 
-    def polarizations(self, f: np.ndarray):
+    def polarizations(self, f):
         """
         Compute frequency-domain TaylorF2 waveform approximant up to 3.5 PN
 
@@ -90,11 +115,8 @@ class TaylorF2(FrequencyDomainWaveform):
         plus_phase = self.phase_expansion(f) - np.pi / 4
         cross_phase = plus_phase + np.pi / 2
         amp = self.amplitude(f)
-        mtot = msun * (gw.m1d + gw.m2d)
 
         # Cutoff
-        risco = 6 * G * mtot / c**2
-        self.f_isco = np.sqrt(G * mtot / risco**3) / np.pi
         cutoff = np.ones_like(f) * (f < 4 * self.f_isco)
 
         # Polarization due to orientation
