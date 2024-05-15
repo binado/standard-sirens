@@ -3,12 +3,16 @@ from scipy.spatial.transform import Rotation as R
 
 
 class Coordinates:
-    def __init__(self, ndim) -> None:
+    """Base class representing a set of coordinates."""
+
+    def __init__(self, ndim):
         self.ndim = ndim
 
 
 class CartesianCoordinates(Coordinates):
-    def __init__(self, ndim, vector) -> None:
+    """Class representing a set of cartesian coordinates."""
+
+    def __init__(self, ndim, vector):
         super().__init__(ndim)
         self._v = vector
 
@@ -42,12 +46,33 @@ class CartesianCoordinates(Coordinates):
         return np.sqrt(self * self)
 
     def cross(self, cartesian_coordinates):
-        """
-        Coordinate cross-product
-        """
-        return np.cross(self.to_array, cartesian_coordinates.to_array)
+        """Return cross-product with another vector.
 
-    def scalarmul(self, scalar: float):
+        Parameters
+        ----------
+        cartesian_coordinates : CartesianCoordinates
+            Second vector
+
+        Returns
+        -------
+        CartesianCoordinates
+            Resulting vector from cross-product operation
+        """
+        v = np.cross(self.to_array, cartesian_coordinates.to_array)
+        return self.__class__(self.ndim, v)
+
+    def scalarmul(self, scalar):
+        """Multiply coordinates by a scalar.
+
+        Parameters
+        ----------
+        scalar : float
+
+        Returns
+        -------
+        CartesianCoordinates
+            Own instance
+        """
         self._v *= scalar
         return self
 
@@ -64,7 +89,7 @@ class CartesianCoordinates(Coordinates):
 class Cartesian3DCoordinates(CartesianCoordinates):
     ndim = 3
 
-    def __init__(self, vector) -> None:
+    def __init__(self, vector):
         super().__init__(self.ndim, vector)
 
     @property
@@ -79,7 +104,7 @@ class Cartesian3DCoordinates(CartesianCoordinates):
     def z(self):
         return self.to_array[-1]
 
-    def rotate_frame(self, alpha: float, beta: float, gamma: float, **kwargs):
+    def rotate_frame(self, alpha, beta, gamma, **kwargs):
         """
         Return coordinates of the same vector in a rotated coordinate frame.
         alpha, beta and gamma describe the Euler angles necessary to rotate the current frame
@@ -103,7 +128,7 @@ class Cartesian3DCoordinates(CartesianCoordinates):
         vector = rotation.apply(self.to_array)
         return self.__class__(vector)
 
-    def rotate_vector(self, alpha: float, beta: float, gamma: float, **kwargs):
+    def rotate_vector(self, alpha, beta, gamma, **kwargs):
         """
         Return coordinates of a new, rotated vector in a fixed coordinate frame.
         alpha, beta and gamma describe the Euler angles necessary to rotate the target frame
@@ -129,9 +154,11 @@ class Cartesian3DCoordinates(CartesianCoordinates):
 
 
 class Spherical3DCoordinates(Coordinates):
+    """Class representing spherical coordinates in 3 dimensions."""
+
     ndim = 3
 
-    def __init__(self, theta, phi, r=1.0) -> None:
+    def __init__(self, theta, phi, r=1.0):
         super().__init__(self.ndim)
         self.r = r
         self.theta = theta
@@ -141,14 +168,44 @@ class Spherical3DCoordinates(Coordinates):
     def angles(self):
         return self.theta, self.phi
 
-    def to_cartesian(self) -> Cartesian3DCoordinates:
+    def to_cartesian(self):
+        """Convert vector in spherical coordinates to
+        a cartesian representation.
+
+        We use the convention that the angle theta is measured
+        with respect to the zx plane, and is zero if aligned with the z-axis.
+
+
+        Parameters
+        ----------
+        coordinates : Spherical3DCoordinates
+            Vector in spherical coordinates
+
+        Returns
+        -------
+        Cartesian3DCoordinates
+            Vector in cartesian coordinates
+        """
         x = self.r * np.sin(self.theta) * np.cos(self.phi)
         y = self.r * np.sin(self.theta) * np.sin(self.phi)
         z = self.r * np.cos(self.theta)
         return Cartesian3DCoordinates(np.array([x, y, z]))
 
     @classmethod
-    def from_cartesian(cls, coordinates: Cartesian3DCoordinates):
+    def from_cartesian(cls, coordinates):
+        """Convert vector in cartesian coordinates to
+        a spherical coordinates representation.
+
+        Parameters
+        ----------
+        coordinates : Cartesian3DCoordinates
+            Vector in cartesian coordinates
+
+        Returns
+        -------
+        Spherical3DCoordinates
+            Vector in spherical coordinates
+        """
         x, y, z = coordinates.to_array
         r = coordinates.norm
         theta = np.arccos(z / r)
@@ -156,7 +213,31 @@ class Spherical3DCoordinates(Coordinates):
         return cls(theta, phi, r)
 
     def __add__(self, spherical_coordinates):
+        """Coordinate addition.
+
+        Parameters
+        ----------
+        spherical_coordinates : Spherical3DCoordinates
+            The second vector
+
+        Returns
+        -------
+        Spherical3DCoordinates
+            Result vector in spherical coordinates
+        """
         return self.from_cartesian(self.to_cartesian() + spherical_coordinates.to_cartesian())
 
     def __mul__(self, spherical_cordinates):
-        return self.from_cartesian(self.to_cartesian() * spherical_cordinates.to_cartesian())
+        """Coordinate dot product.
+
+        Parameters
+        ----------
+        spherical_coordinates : Spherical3DCoordinates
+            The second vector
+
+        Returns
+        -------
+        float
+            Dot product of the two vectors
+        """
+        return self.to_cartesian() * spherical_cordinates.to_cartesian()
