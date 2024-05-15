@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 
 
 class GLADECatalogTranslator:
@@ -118,7 +117,7 @@ class GLADECatalogTranslator:
 
 class GLADECatalogParser:
     @staticmethod
-    def parse(file, cols, filter_fn, chunksize=200000, progress=tqdm, **kwargs):
+    def parse(file, cols, filter_fn, chunksize=200000, progress=None, **kwargs):
         """Parse the GlADE+ text file into a Pandas DataFrame.
 
         Uses Pandas.read_csv method.
@@ -134,7 +133,7 @@ class GLADECatalogParser:
         chunksize : int, optional
             The chunksize argument of read_csv. Defaults to 200000, which corresponds to roughly 100 iterations
         progress :  optional
-            A progress bar decorator, by default tqdm
+            A progress bar decorator, such as tqdm.tqdm. By default None.
 
         Returns
         -------
@@ -150,7 +149,7 @@ class GLADECatalogParser:
             header=None,
             false_values=["null"],
             chunksize=chunksize,
-            **kwargs
+            **kwargs,
         )
         chunks = []
         with pd.read_csv(file, **reader_args) as reader:

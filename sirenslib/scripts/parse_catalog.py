@@ -5,6 +5,7 @@ import os
 import logging
 
 import numpy as np
+from tqdm import tqdm
 
 from ..utils.io import write_to_hdf5
 from ..utils.logger import get_logger, DEFAULT_LOGFILE
@@ -94,8 +95,9 @@ def main():
         if nrows is not None:
             logging.info("Parsing the first %s galaxies", nrows)
 
-    chunks = []
-    catalog = GLADECatalogParser.parse(filename, cols, filter_fn=filter_chunk, chunksize=chunksize, nrows=nrows)
+    catalog = GLADECatalogParser.parse(
+        filename, cols, filter_fn=filter_chunk, chunksize=chunksize, nrows=nrows, progress=tqdm
+    )
     if verbose:
         logging.info("Catalog parsed successfully with %s objects.", catalog.shape[0])
 
