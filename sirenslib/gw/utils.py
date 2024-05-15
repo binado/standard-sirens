@@ -39,7 +39,7 @@ def scalar_product(a, b, sn, f):
     float
         Signal-scalar product of a and b
     """
-    return 4 * np.real(simpson(a * np.conj(b) / sn, f))
+    return 4 * np.real(simpson(a * np.conj(b) / sn, x=f))
 
 
 def snr(h, k, sn, f):
