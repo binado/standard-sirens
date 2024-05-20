@@ -8,3 +8,4 @@ scipy
 tqdm
 emcee
 dynesty
+ligo.skymap
