@@ -20,6 +20,7 @@ Homepage = "https://github.com/binado/standard-sirens"
 
 [project.scripts]
 sirenslib-cls = "sirenslib.scripts.cls:main"
+sirenslib-cls_gw = "sirenslib.scripts.cls_gw:main"
 sirenslib-inference = "sirenslib.scripts.dark_siren_inference:main"
 sirenslib-parse_catalog = "sirenslib.scripts.parse_catalog:main"
 
