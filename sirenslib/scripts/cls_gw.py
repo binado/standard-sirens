@@ -1,7 +1,6 @@
 import argparse
 from pathlib import Path
 
-import numpy as np
 import healpy as hp
 import matplotlib.pyplot as plt
 from ..gw.skymap import get_skymaps, GWSkymap, get_combined_skymap
