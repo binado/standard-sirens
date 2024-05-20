@@ -14,9 +14,7 @@ from ..utils.logger import get_logger, DEFAULT_LOGFILE
 logger = get_logger(__name__, logfile=DEFAULT_LOGFILE)
 
 # Adding CLI arguments
-argument_parser = argparse.ArgumentParser(
-    prog="catalog_angular_power_spectrum", description="Compute catalog angular power spectrum"
-)
+argument_parser = argparse.ArgumentParser(description="Compute catalog angular power spectrum")
 argument_parser.add_argument("filename", type=Path, help="Path to GLADE+ text file")
 argument_parser.add_argument("-b", "--bins", type=float, nargs="*", default=None, help="Custom redshift bins")
 argument_parser.add_argument("-n", "--nbins", type=int, default=5, help="Number of bins")
