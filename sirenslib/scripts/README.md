@@ -30,3 +30,17 @@ Here is an example with typical options:
 ```bash
 sirenslib-cls path_to_parsed_catalog.hdf5 0.0 0.1 0.2 0.3 0.4 --zmax 0.5 --nside 256 -a 1.0 -l 4 -q 0.3 -s -v
 ```
+
+## `sirenslib-cls_gw`
+
+Compute angular power spectra for the sky distribution of GW sources in the GWTC3 catalog. Uses either `anafast` or `namaster` routines.
+
+Example:
+
+- HEALPIX `nside` = 256
+- Maximum multipole `lmax` = 100
+- `anafast` routine for estimating the power spectra
+
+```bash
+sirenslib-cls_gw data/gwtc3-localizations/ -s --nside 256 --lmax 100 -m anafast
+```
