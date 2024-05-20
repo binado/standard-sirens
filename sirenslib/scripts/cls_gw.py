@@ -10,6 +10,14 @@ parser = argparse.ArgumentParser(description="Estimate the angular power spectru
 
 parser.add_argument("dir", type=str, help="Path to localization directory")
 parser.add_argument("--nside", type=int, default=256, help="nside HEALPIX parameter")
+parser.add_argument(
+    "-m",
+    "--method",
+    type=str,
+    default="anafast",
+    help="Method to compute the power spectrum. Should be 'namaster' or 'anafast'",
+)
+parser.add_argument("--nlb", type=int, default=4, help="Number of multipoles per bandpower setting in namaster")
 parser.add_argument("--figure-dir", default="figures/cls_gw")
 parser.add_argument("-s", "--save-figure", action="store_true", help="Save output to figure")
 parser.add_argument("--figure-format", type=str, default="png", help="Figure format")
@@ -22,19 +30,18 @@ def main():
     args = parser.parse_args()
 
     base_dir = Path(args.dir)
-    csv_file = list(base_dir.glob("*.csv"))[0]
 
     if args.save_figure:
         out_dir = Path(args.figure_dir)
         out_dir.mkdir(exist_ok=True)
 
     gw_skymaps = []
-    for probmap in get_skymaps(base_dir, csv_file):
+    for probmap in get_skymaps(base_dir):
         gw_skymaps.append(GWSkymap(probmap))
 
     combined_skymap = get_combined_skymap(gw_skymaps, args.nside)
-    cls = combined_skymap.power_spectrum(lmax=args.lmax)
-    ells = np.arange(1, cls.size + 1)
+    method = args.method if args.method in ("namaster", "anafast") else "anafast"
+    ells, cls = combined_skymap.power_spectrum(args.lmax, method=method)
 
     if args.save_figure:
         # Plotting
@@ -43,10 +50,11 @@ def main():
         plt.savefig(figpath, dpi=400)
 
         fig, ax = plt.subplots()
-        ax.semilogy(ells[2:], cls[2:])
+        lcut = (ells > args.lmin) & (ells < args.lmax)
+        ax.semilogy(ells[lcut], cls[lcut])
         ax.set_xlabel(r"$\ell$")
-        ax.set_ylabel(r"$C_\ell / C_0$")
+        ax.set_ylabel(r"$C_\ell$")
         ax.grid()
         fig.tight_layout()
-        figpath = out_dir / f"cls_gw_nside={args.nside}.{args.figure_format}"
+        figpath = out_dir / f"cls_gw_nside={args.nside}_method={method}.{args.figure_format}"
         fig.savefig(figpath, dpi=400)
