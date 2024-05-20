@@ -3,6 +3,7 @@ from pathlib import Path
 
 import healpy as hp
 import matplotlib.pyplot as plt
+import pandas as pd
 from ..gw.skymap import get_skymaps, GWSkymap, get_combined_skymap
 
 parser = argparse.ArgumentParser(description="Estimate the angular power spectrum of GW skymaps.")
@@ -17,7 +18,7 @@ parser.add_argument(
     help="Method to compute the power spectrum. Should be 'namaster' or 'anafast'",
 )
 parser.add_argument("--nlb", type=int, default=4, help="Number of multipoles per bandpower setting in namaster")
-parser.add_argument("--figure-dir", default="figures/cls_gw")
+parser.add_argument("--outdir", default="out/cls_gw")
 parser.add_argument("-s", "--save-figure", action="store_true", help="Save output to figure")
 parser.add_argument("--figure-format", type=str, default="png", help="Figure format")
 parser.add_argument("--lmin", type=int, default=2, help="Minimum l for plotting")
@@ -31,7 +32,7 @@ def main():
     base_dir = Path(args.dir)
 
     if args.save_figure:
-        out_dir = Path(args.figure_dir)
+        out_dir = Path(args.outdir)
         out_dir.mkdir(exist_ok=True)
 
     gw_skymaps = []
@@ -41,6 +42,10 @@ def main():
     combined_skymap = get_combined_skymap(gw_skymaps, args.nside)
     method = args.method if args.method in ("namaster", "anafast") else "anafast"
     ells, cls = combined_skymap.power_spectrum(args.lmax, method=method)
+
+    lcut = (ells > args.lmin) & (ells < args.lmax)
+    df = pd.DataFrame({"ells": ells[lcut], "cls": cls[lcut]})
+    df.to_csv(out_dir / f"cls_gw_nside={args.nside}_method={method}.csv", index=False)
 
     if args.save_figure:
         # Plotting
