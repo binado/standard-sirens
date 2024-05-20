@@ -3,6 +3,11 @@ import healpy as hp
 from ligo.skymap.io.fits import read_sky_map
 from pandas import read_csv
 
+try:
+    import pymaster as nmt
+except ModuleNotFoundError:
+    nmt = None
+
 
 def get_skymaps(base_path, **kwargs):
     """Helper method to extract the skymaps published in the LVK GWTC-3 data release.
@@ -42,16 +47,44 @@ class GWSkymap:
         self.npix = len(probmap)
         self.nside = hp.npix2nside(self.npix)
 
-    def power_spectrum(self, **kwargs):
-        """Compute the angular power spectrum of the probability map with the `anafast` routine.
-        Extra arguments are passed to `anafast`.
+    def power_spectrum(self, lmax, method="anafast", nlb=4, **kwargs):
+        """Estimate the angular power spectrum from the probability map.
+
+        Parameters
+        ----------
+        lmax: int
+            The maximum multipole with which to compute the angular power spectrum
+        method : {"anafast", "namaster"}, optional
+            Method to compute the angular power spectrum, by default "anafast"
+        nlb : int, optional
+            _description_, by default 4
 
         Returns
         -------
-        ndarray
-            The array of $C_\ell$
+        ells: ndarray
+            Array of multipoles
+        cls: ndarray
+            Array of $C_\ell$
+
+        Raises
+        ------
+        ModuleNotFoundError
+            Raised if pymaster package is not installed.
         """
-        return hp.anafast(self.probmap, use_pixel_weights=True, **kwargs)
+        if method == "namaster":
+            if nmt is None:
+                raise ModuleNotFoundError("pymaster package is not installed.")
+
+            # Create all-sky mask for the power spectrum
+            mask = np.ones_like(self.probmap)
+            field = nmt.NmtField(mask, [self.probmap])
+            ellbins = nmt.NmtBin.from_nside_linear(self.nside, nlb)
+            ells = ellbins.get_effective_ells()
+            (cls,) = nmt.compute_full_master(field, field, ellbins, **kwargs)
+        else:
+            cls = hp.anafast(self.probmap, use_pixel_weights=True, lmax=lmax, **kwargs)
+            ells = np.arange(1, cls.size + 1)
+        return ells, cls
 
 
 def get_combined_skymap(gw_skymaps, nside):
