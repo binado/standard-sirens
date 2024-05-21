@@ -24,6 +24,7 @@ parser.add_argument("-s", "--save-figure", action="store_true", help="Save outpu
 parser.add_argument("--figure-format", type=str, default="png", help="Figure format")
 parser.add_argument("--lmin", type=int, default=2, help="Minimum l for plotting")
 parser.add_argument("--lmax", type=int, default=None, help="Maximum l for plotting")
+parser.add_argument("--remove-dipole", action="store_true", help="Remove monopole and dipole before running anafast")
 parser.add_argument("-v", "--verbose", action="store_true")
 
 

@@ -47,17 +47,19 @@ class GWSkymap:
         self.npix = len(probmap)
         self.nside = hp.npix2nside(self.npix)
 
-    def power_spectrum(self, lmax, method="anafast", nlb=4, **kwargs):
+    def power_spectrum(self, lmax, method="anafast", nlb=4, remove_dipole=False, **kwargs):
         """Estimate the angular power spectrum from the probability map.
 
         Parameters
         ----------
         lmax: int
             The maximum multipole with which to compute the angular power spectrum
-        method : {"anafast", "namaster"}, optional
+        method: {"anafast", "namaster"}, optional
             Method to compute the angular power spectrum, by default "anafast"
-        nlb : int, optional
-            _description_, by default 4
+        nlb: int, optional
+            Number of multipoles per bandpower setting in `namaster`. By default 4
+        remove_dipole: bool, optional
+            Remove the dipole before running `anafast`. By default False
 
         Returns
         -------
@@ -82,6 +84,7 @@ class GWSkymap:
             ells = ellbins.get_effective_ells()
             (cls,) = nmt.compute_full_master(field, field, ellbins, **kwargs)
         else:
+            probmap = hp.remove_dipole(self.probmap) if remove_dipole else self.probmap
             cls = hp.anafast(self.probmap, use_pixel_weights=True, lmax=lmax, **kwargs)
             ells = np.arange(1, cls.size + 1)
         return ells, cls
