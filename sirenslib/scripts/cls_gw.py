@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 
+import numpy as np
 import healpy as hp
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -47,9 +48,17 @@ def main():
     df = pd.DataFrame({"ells": ells[lcut], "cls": cls[lcut]})
     df.to_csv(out_dir / f"cls_gw_nside={args.nside}_method={method}.csv", index=False)
 
+    hp.write_map(
+        out_dir / f"skymap_gw_nside={args.nside}.fits",
+        combined_skymap.probmap,
+        coord="C",
+        column_names=["Sky probability"],
+        dtype=np.float64,
+    )
+
     if args.save_figure:
         # Plotting
-        hp.mollview(combined_skymap.probmap, norm="log", coord=["E", "G"], title="GW Skymap", cmap="viridis")
+        hp.mollview(combined_skymap.probmap, norm="log", coord=["C"], title="GW Skymap", cmap="viridis")
         figpath = out_dir / f"skymap_gw_nside={args.nside}.{args.figure_format}"
         plt.savefig(figpath, dpi=400)
 
