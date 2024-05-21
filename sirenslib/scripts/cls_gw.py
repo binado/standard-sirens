@@ -43,7 +43,7 @@ def main():
 
     combined_skymap = get_combined_skymap(gw_skymaps, args.nside)
     method = args.method if args.method in ("namaster", "anafast") else "anafast"
-    ells, cls = combined_skymap.power_spectrum(args.lmax, method=method)
+    ells, cls = combined_skymap.power_spectrum(args.lmax, method=method, nlb=args.nlb, remove_dipole=args.remove_dipole)
 
     lcut = (ells > args.lmin) & (ells < args.lmax)
     df = pd.DataFrame({"ells": ells[lcut], "cls": cls[lcut]})

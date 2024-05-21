@@ -85,7 +85,7 @@ class GWSkymap:
             (cls,) = nmt.compute_full_master(field, field, ellbins, **kwargs)
         else:
             probmap = hp.remove_dipole(self.probmap) if remove_dipole else self.probmap
-            cls = hp.anafast(self.probmap, use_pixel_weights=True, lmax=lmax, **kwargs)
+            cls = hp.anafast(probmap, use_pixel_weights=True, lmax=lmax, **kwargs)
             ells = np.arange(1, cls.size + 1)
         return ells, cls
 
