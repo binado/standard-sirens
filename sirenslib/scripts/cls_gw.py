@@ -55,6 +55,7 @@ def main():
         coord="C",
         column_names=["Sky probability"],
         dtype=np.float64,
+        overwrite=True,
     )
 
     if args.save_figure:
